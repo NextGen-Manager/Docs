@@ -23,7 +23,11 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 9. [Roadmap implementasi MVP](docs/09-mvp-roadmap.md)
 10. [Database dan storage design](docs/10-database-and-storage-design.md)
 11. [Deployment dan observability](docs/11-deployment-and-observability.md)
-12. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
+12. [Workflow aplikasi end-to-end](docs/12-application-workflow.md)
+13. [UI system dan rencana mock interaktif](docs/13-ui-system-and-mock-plan.md)
+14. [Keputusan tech stack dan version pinning](docs/14-tech-stack-decisions.md)
+15. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
+16. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
 
 ## Ketetapan teknis
 

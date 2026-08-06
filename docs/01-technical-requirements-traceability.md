@@ -6,7 +6,7 @@ Dokumen ini mengunci requirement proposal sebagai source of truth. Dokumentasi a
 
 | Layer | Fixed technology |
 |---|---|
-| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4 — lihat [ADR-002](adr/ADR-002-frontend-framework-version.md) |
 | Backend | FastAPI, Python 3.11, Pydantic |
 | AI engine | OASIS/CAMEL-AI, LangChain, empat agent inti |
 | LLM | Google Gemini dengan multi-vendor adapter |
@@ -66,6 +66,7 @@ Keempat type dijalankan melalui OASIS AgentGraph. Personality instances boleh be
 ## Change control
 
 - Priority dan scope pada tabel di atas bersifat fixed.
+- **Layer teknologi bersifat fixed; versi di dalamnya tidak.** Mengganti Next.js dengan framework lain memerlukan persetujuan product owner. Menaikkan versi Next.js karena versi lama kehilangan dukungan keamanan cukup melalui ADR. Setiap perubahan versi wajib memperbarui baris pada tabel baseline beserta tautan ADR-nya.
 - Technical spike hanya memilih cara implementasi, bukan menghapus requirement.
 - Jika library/provider bermasalah, gunakan adapter, fallback provider, atau fork terkontrol sambil mempertahankan behavior requirement.
 - Pull request yang menyentuh requirement wajib memperbarui mapping API, test, dan dokumentasi terkait.
