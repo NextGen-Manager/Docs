@@ -50,7 +50,7 @@ Next.js 16 + React 19 + Tailwind v4. `tsc --noEmit` bersih, build lolos, seluruh
 **Demo (`/demo/*`), seluruhnya data contoh:**
 - Journey A: `/demo/analisis/input` (peta, produk, modal) → `/demo/edukasi` (gerbang F-09) → `/demo/analisis/konfirmasi` → `/demo/analisis/proses` (empat agent) → `/demo/laporan/{id}` → `/demo/diskusi`.
 - Workspace: dashboard, analitik komposit dan per usaha, katalog produk per usaha, riwayat analisis, serta riwayat laporan memakai app shell tetap dan tidak menjalankan autoplay.
-- Journey B: `/demo/transaksi/produk` → `/demo/transaksi/catat` → `/demo/transaksi/struk` → `/demo/transaksi/analitik` (riwayat mingguan, sebaran per jam, rekomendasi AI).
+- Journey B: `/demo/transaksi/produk` → `/demo/transaksi/catat` (*Transaction Management*) dengan cabang input manual atau `/demo/transaksi/struk` → gate tujuh hari → `/demo/transaksi/analitik` (ranking produk, tren mingguan, sebaran per jam, rekomendasi, dan ekspor).
 - Demo terisolasi di `src/app/demo/` dan `src/demo/`. Menghapus keduanya tidak merusak aplikasi.
 
 ### Backend (`SimuMarketAI-BE`)
@@ -83,9 +83,11 @@ Kasir ada karena ia yang merekam transaksi. Aksesnya dibatasi pada pekerjaan itu
 
 Kasir **tidak** melihat HPP dan marjin, analitik mingguan, skor kelayakan, proyeksi finansial, modal awal, Market Analysis, maupun modul edukasi.
 
+Pada demo, profil Raka Pratama dapat diganti antara mode pemilik dan kasir per toko. Sidebar kasir hanya merender *Dashboard* dan *Catat Transaksi*. Daftar produk beserta harga jual hanya tersedia sebagai pilihan saat mencatat; kasir tidak mendapat destination pengelolaan produk.
+
 Dua alasannya: HPP dan marjin adalah data biaya, bukan data operasional — kasir butuh harga jual untuk mencatat, tidak butuh tahu untungnya. Dan skor serta proyeksi finansial menyangkut keputusan modal pemilik; membocorkannya ke seluruh karyawan mengubah sifat produk tanpa pemilik pernah memilih itu.
 
-Tabel hak akses lengkap ada di `docs/15`. **Detailnya usulan, belum dikonfirmasi** — arahannya baru "yang sesuai".
+Tabel hak akses lengkap di `docs/15` telah dikonfirmasi product owner pada 9 Agustus 2026.
 
 ---
 
@@ -93,13 +95,7 @@ Tabel hak akses lengkap ada di `docs/15`. **Detailnya usulan, belum dikonfirmasi
 
 Yang **tidak boleh diputuskan sendiri** oleh sesi berikutnya.
 
-### 1. Detail hak akses kasir
-
-Tabel di `docs/15` adalah usulan. Perlu dibaca dan dikoreksi sebelum app shell dibangun, karena menentukan apa yang dirender di sidebar.
-
-**Status:** menunggu konfirmasi.
-
-### 2. Cara mengundang kasir
+### 1. Cara mengundang kasir
 
 Belum ada di dokumen mana pun. Pilihan: undangan lewat email, kode undangan, atau akun dibuatkan pemilik. Menyentuh alur autentikasi dan privasi.
 
@@ -107,7 +103,7 @@ Belum ada di dokumen mana pun. Pilihan: undangan lewat email, kode undangan, ata
 
 **Status:** belum diputuskan.
 
-### 3. Batas jumlah usaha per akun
+### 2. Batas jumlah usaha per akun
 
 Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Perlu angka wajar, atau dikaitkan dengan model bisnis freemium di proposal §5.10.
 
@@ -143,12 +139,11 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Urutan ini mengikuti risiko, bukan kemudahan.
 
-1. **Konfirmasi tabel hak akses kasir** di `docs/15`. Ini satu-satunya keputusan tertunda yang memblokir langkah 3, karena menentukan apa yang dirender di sidebar.
-2. **Merge `feat/dashboard` ke `main`** di repository frontend setelah review UI.
-3. **Perbarui `docs/06`** dengan field `keadaan` dan scoping `business_id`, sebelum backend menyentuh endpoint dashboard.
-4. **Implementasikan app shell berbasis RBAC** setelah detail hak akses kasir disetujui; mock saat ini masih memakai persona pemilik.
-5. **Perbaiki konfigurasi lint dan test frontend** agar sesuai Next.js 16 dan perintah wajib repository dapat dijalankan.
-6. **Mulai backend.** Roadmap di `docs/09` menempatkan spike OASIS sebagai risiko pertama, bukan integrasi terakhir.
+1. **Merge `feat/dashboard` ke `main`** di repository frontend setelah review UI.
+2. **Perbarui `docs/06`** dengan field `keadaan` dan scoping `business_id`, sebelum backend menyentuh endpoint dashboard.
+3. Tegakkan RBAC di backend; pergantian peran frontend saat ini hanya kontrol mode demo.
+4. **Perbaiki konfigurasi lint dan test frontend** agar sesuai Next.js 16 dan perintah wajib repository dapat dijalankan.
+5. **Mulai backend.** Roadmap di `docs/09` menempatkan spike OASIS sebagai risiko pertama, bukan integrasi terakhir.
 
 ---
 

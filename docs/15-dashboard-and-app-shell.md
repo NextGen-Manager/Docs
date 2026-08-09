@@ -121,7 +121,7 @@ Setiap item navigasi membuka destination mandiri di dalam app shell. *Transaksi*
 
 Pada layar sempit sidebar menjadi bilah bawah berisi empat tujuan utama, karena modul transaksi dipakai sambil berdiri.
 
-Untuk kasir, kelompok *Analisis* dan *Belajar* tidak dirender sama sekali. Tab usaha juga tidak muncul karena akses kasir terikat satu usaha.
+Untuk kasir, sidebar hanya merender *Dashboard* dan *Catat Transaksi*. Kelompok *Analisis*, destination pengelolaan usaha, dan *Belajar* tidak dirender. Tab usaha juga tidak muncul karena akses kasir terikat satu usaha.
 
 ---
 
@@ -296,7 +296,7 @@ Konsekuensi yang perlu disadari: **gerbang tujuh hari kehilangan satu-satunya pe
 
 Kasir ada karena ia yang merekam transaksi. Aksesnya dibatasi pada pekerjaan itu.
 
-Usulan pembagian hak akses di bawah ini **belum dikonfirmasi detailnya** — arahannya baru "yang sesuai". Ubah bebas.
+Pembagian hak akses berikut dikonfirmasi product owner pada 9 Agustus 2026.
 
 | Kemampuan | Pemilik | Kasir |
 |---|---|---|
@@ -319,13 +319,12 @@ Dua alasan pembatasan yang perlu dipegang:
 
 Konsekuensi rancangan:
 
-- Sidebar kasir hanya memuat *Transaksi* dan *Produk* (baca saja). Kelompok *Analisis* dan *Belajar* tidak dirender sama sekali — bukan disembunyikan dengan CSS.
+- Sidebar kasir hanya memuat *Dashboard* dan *Catat Transaksi*. Daftar produk beserta harga jual tersedia di dalam form pencatatan, tetapi destination *Produk* tidak dirender karena pengelolaan katalog tetap milik pemilik.
 - Blok utama untuk kasir hanya punya dua keadaan: sudah mencatat hari ini, atau belum. Progres tujuh hari, rencana 30 hari, dan insight tidak tampil.
 - **Butuh mekanisme undangan kasir** yang belum ada di dokumen mana pun: pemilik mengundang lewat email atau kode, kasir menerima, aksesnya terikat satu `business_id`.
 - Pembatasan ditegakkan di **repository layer backend**, bukan hanya dengan menyembunyikan menu. Aturan ini sudah tertulis di `AGENTS.md` backend.
 
 ## Yang masih perlu diputuskan
 
-1. **Detail hak akses kasir** — tabel di atas adalah usulan, belum dikonfirmasi.
-2. **Cara mengundang kasir** — lewat email, kode undangan, atau akun dibuatkan pemilik. Menyentuh privasi dan alur autentikasi.
-3. **Batas jumlah usaha per akun.** Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Perlu angka wajar, atau dikaitkan dengan model bisnis freemium di proposal §5.10.
+1. **Cara mengundang kasir** — lewat email, kode undangan, atau akun dibuatkan pemilik. Menyentuh privasi dan alur autentikasi.
+2. **Batas jumlah usaha per akun.** Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Perlu angka wajar, atau dikaitkan dengan model bisnis freemium di proposal §5.10.
