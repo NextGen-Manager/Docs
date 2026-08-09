@@ -26,8 +26,14 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 12. [Workflow aplikasi end-to-end](docs/12-application-workflow.md)
 13. [UI system dan rencana mock interaktif](docs/13-ui-system-and-mock-plan.md)
 14. [Keputusan tech stack dan version pinning](docs/14-tech-stack-decisions.md)
-15. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
-16. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
+15. [Dashboard dan app shell](docs/15-dashboard-and-app-shell.md)
+16. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
+17. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
+
+## Serah terima antarsesi
+
+Keadaan proyek terkini, keputusan yang menunggu, dan langkah berikutnya ada di
+[HANDOVER.md](HANDOVER.md). Baca itu lebih dulu sebelum melanjutkan pekerjaan.
 
 ## Ketetapan teknis
 
