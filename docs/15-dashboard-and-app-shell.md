@@ -94,11 +94,9 @@ Karena itu: kartu tiga modul dipertahankan sebagai isi keadaan awal, lalu digant
 ```text
 ┌──────────────┬──────────────────────────────────────────────┐
 │ SimuMarket   │  Beranda                          [profil]   │
-│ ┌──────────┐ │                                              │
-│ │Kopi Senja│▾│  ┌────────────────────────────────────────┐  │
-│ └──────────┘ │  │  BLOK UTAMA                            │  │
-│ ▸ Beranda    │  │  berubah menurut keadaan pengguna      │  │
-│              │  │  satu aksi utama, tidak lebih          │  │
+│ ▸ Beranda    │  ┌────────────────────────────────────────┐  │
+│              │  │  BLOK UTAMA KOMPOSIT                  │  │
+│              │  │  merangkum seluruh usaha              │  │
 │ ANALISIS     │  └────────────────────────────────────────┘  │
 │ ▸ Market   3 │                                              │
 │ ▸ Riwayat    │  Rencana 30 Hari              2 dari 5 ✓     │
@@ -115,15 +113,15 @@ Karena itu: kartu tiga modul dipertahankan sebagai isi keadaan awal, lalu digant
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-Pemilih usaha berada di awal kelompok *Usaha*, bukan di bawah logo. Penempatan ini memperjelas bahwa pilihan tersebut hanya memengaruhi transaksi, analitik, produk, dan blok operasional usaha. Modul *Analisis* tidak terikat usaha karena analisis justru dapat dijalankan sebelum usaha ada.
+Sidebar tidak memiliki pemilih usaha global. Beranda menampilkan komposit seluruh usaha. Scope usaha dipilih di dalam destination *Transaksi*, *Analitik*, dan *Produk* supaya konteksnya terlihat tepat di tempat data digunakan. Modul *Analisis* tetap tidak terikat usaha karena analisis dapat dijalankan sebelum usaha ada.
 
 Sidebar dikelompokkan menurut **maksud pengguna**, bukan menurut nama modul di proposal: *Analisis* untuk memutuskan, *Usaha* untuk menjalankan, *Belajar* untuk memahami. Pengguna tidak berpikir "saya mau modul 3".
 
-Setiap item navigasi membuka destination mandiri di dalam app shell. *Analitik* dimulai dari komposit seluruh usaha dan menyediakan rincian per usaha. *Produk* menampilkan katalog yang di-scope oleh usaha. *Riwayat Analisis* dan *Laporan* masing-masing membuka daftar riwayat terlebih dahulu; detail dipilih dari daftar tersebut dan tidak menjalankan autoplay journey.
+Setiap item navigasi membuka destination mandiri di dalam app shell. *Transaksi* dan *Produk* menyediakan tab per usaha. *Analitik* dimulai dari komposit seluruh usaha dan menyediakan rincian per usaha. *Riwayat Analisis* dan *Laporan* masing-masing membuka daftar riwayat terlebih dahulu; detail dipilih dari daftar tersebut dan tidak menjalankan autoplay journey.
 
 Pada layar sempit sidebar menjadi bilah bawah berisi empat tujuan utama, karena modul transaksi dipakai sambil berdiri.
 
-Untuk kasir, kelompok *Analisis* dan *Belajar* tidak dirender sama sekali, dan pemilih usaha tidak muncul karena aksesnya terikat satu usaha.
+Untuk kasir, kelompok *Analisis* dan *Belajar* tidak dirender sama sekali. Tab usaha juga tidak muncul karena akses kasir terikat satu usaha.
 
 ---
 
@@ -283,7 +281,7 @@ Pengguna dapat mengelola lebih dari satu usaha. Dashboard menyesuaikan.
 
 Konsekuensi rancangan:
 
-- **Sidebar butuh pemilih usaha** di dalam kelompok *Usaha*. Transaksi, analitik, produk, dan rencana 30 hari mengikuti usaha yang sedang dipilih; navigasi analisis dan belajar tidak ikut berubah.
+- **Tidak ada pemilih usaha global di sidebar.** Beranda mengembalikan komposit seluruh usaha. Transaksi, analitik, dan produk menerima `business_id` dari pilihan lokal pada destination masing-masing.
 - **Keadaan B berubah maknanya.** Pertanyaannya bukan lagi "analisis mana yang jadi usahamu", melainkan "analisis ini mau dijadikan usaha?". Satu analisis dapat dinaikkan menjadi usaha; sisanya tetap tersimpan sebagai skenario pembanding.
 - **Modul analisis tidak terikat usaha.** Analisis bisa dijalankan sebelum usaha ada, karena memang itu gunanya. Yang terikat usaha adalah transaksi, produk, dan analitik.
 - `business_profile` berelasi satu-ke-banyak terhadap user; seluruh query transaksi dan analitik di-scope oleh `business_id`, bukan hanya `user_id`.

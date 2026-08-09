@@ -65,7 +65,7 @@ Ditetapkan product owner **9 Agustus 2026**. Rinciannya di `docs/15`.
 
 ### 1. Satu akun boleh punya banyak usaha
 
-Dashboard menyesuaikan. Sidebar mendapat **pemilih usaha** di dalam kelompok *Usaha*; transaksi, produk, analitik, dan rencana 30 hari mengikuti usaha yang dipilih.
+Dashboard menampilkan komposit seluruh usaha dan sidebar tidak memiliki pemilih usaha global. Scope usaha dipilih di dalam halaman transaksi, produk, dan analitik masing-masing.
 
 Modul analisis **tidak** terikat usaha — analisis justru dijalankan sebelum usaha ada. Satu analisis dapat dinaikkan menjadi usaha; sisanya tetap tersimpan sebagai skenario pembanding.
 
