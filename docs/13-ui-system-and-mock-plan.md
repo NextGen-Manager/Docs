@@ -327,8 +327,8 @@ Hasil Simulasi Peluncuran Produk                                        ← seri
 Laporan kesiapan peluncuran berdasarkan parameter pasar…                ← serif italic
 
 01  Launch Readiness Score                                                        ⌄
-    68 /100   ⚠ Potensi Sedang — Perlu Penyesuaian
-    aturan lrs-v0.1-unvalidated · belum tervalidasi ahli
+    66 /100   Layak dengan mitigasi
+    aturan lrs-v0.2-unvalidated · belum tervalidasi ahli
     ┌ Asisten AI Tersedia ─────────────────────┐
     │ [ Tanya AI tentang Hasil Ini → ]         │
     └──────────────────────────────────────────┘
@@ -374,7 +374,7 @@ Dua kolom: konteks run (kiri, sticky) dan percakapan (kanan).
 ```text
 ┌ Kedai Kopi Senja ───────┐ ┌ Tanya AI tentang Peluncuranmu ────────────────────────┐
 │ SKOR KELAYAKAN          │ │  [Pakar Pemasaran] [Ahli Finansial] [Analis Risiko]   │
-│ ▓▓▓▓▓▓▓░░░  68/100      │ │                                                        │
+│ ▓▓▓▓▓▓▓░░░  66/100      │ │                                                        │
 │ Target   Mahasiswa      │ │                        ┌ ANDA ───────────────────────┐ │
 │ Harga    Rp 25.000      │ │                        │ "Bagaimana jika promo…"     │ │
 │ ┌ Insight Utama ──────┐ │ │                        └─────────────────────────────┘ │
@@ -517,7 +517,7 @@ Cukup dua, dipilih lewat tombol kecil di layar Simulasi atau parameter URL `?has
 
 | Varian | Yang ditunjukkan |
 |---|---|
-| Normal | laporan lengkap dengan skor 68 |
+| Normal | laporan lengkap dengan skor 66 |
 | Parsial | simulasi persona gagal, laporan tetap tampil dengan bagian bertanda tidak tersedia |
 
 Varian parsial layak dibuat sejak awal meski menambah sedikit kerja: ia adalah satu-satunya cara memperlihatkan bahwa produk tetap berguna saat AI gagal, dan itu poin cerita yang kuat saat demo.

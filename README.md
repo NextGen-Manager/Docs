@@ -29,6 +29,7 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 15. [Dashboard dan app shell](docs/15-dashboard-and-app-shell.md)
 16. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
 17. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
+18. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
 
 ## Serah terima antarsesi
 

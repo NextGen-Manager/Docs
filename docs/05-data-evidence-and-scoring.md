@@ -98,18 +98,20 @@ Conservative/base/optimistic memilih nilai dari range input atau scenario assump
 }
 ```
 
-## Launch Readiness Score v0
+## Launch Readiness Score v0.2
 
-Bobot proposal awal dipertahankan sebagai draft, bukan fakta tervalidasi:
+Bobot ditetapkan product owner pada 11 Agustus 2026 dan tetap berstatus hipotesis sampai expert review serta calibration selesai:
 
 ```text
-LRS = 0.30 * market_saturation
+LRS = 0.20 * market_saturation
     + 0.25 * demand_potential
-    + 0.25 * price_positioning
-    + 0.20 * operational_readiness
+    + 0.15 * price_positioning
+    + 0.40 * operational_readiness
 ```
 
 Setiap dimension score berada pada 0–100 dan hanya berasal dari rule versioned.
+
+Rule set aktif adalah `lrs-v0.2-unvalidated`. `lrs-v0.1-unvalidated` dengan bobot 30%/25%/25%/20% tetap disimpan untuk mereproduksi laporan historis dan tidak dihitung ulang. Alasan perubahan dicatat di [ADR-003](adr/ADR-003-launch-readiness-score-weights.md).
 
 ### Market saturation
 
@@ -130,7 +132,7 @@ Candidate inputs: kelengkapan biaya, positive contribution margin, capacity vs B
 ## Rule representation
 
 ```yaml
-rule_set: lrs-v0.1-unvalidated
+rule_set: lrs-v0.2-unvalidated
 dimension: price_positioning
 rules:
   - id: PP-001

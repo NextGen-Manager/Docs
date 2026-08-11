@@ -109,7 +109,7 @@ Karena itu: kartu tiga modul dipertahankan sebagai isi keadaan awal, lalu digant
 │ BELAJAR      │  └───────────────────┘ └──────────────────┘  │
 │ ▸ Edukasi 3/4│                                              │
 │              │  Analisis tersimpan                          │
-│ ▸ Laporan    │  Tebet 68 · Depok 54 · Bekasi 71             │
+│ ▸ Laporan    │  Tebet 66 · Depok 54 · Bekasi 71             │
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
@@ -147,8 +147,8 @@ Dua pilihan, bukan tiga kartu modul. Edukasi tidak ditawarkan di sini karena ia 
 ### Keadaan B — sudah menganalisis, usaha belum jalan
 
 ```text
-Kopi Senja · Tebet                              68/100
-Layak dengan mitigasi                    lrs-v0.1-unvalidated
+Kopi Senja · Tebet                              66/100
+Layak dengan mitigasi                    lrs-v0.2-unvalidated
 
 Langkah berikutnya dari laporanmu          2 dari 5 selesai
 ☑ Kumpulkan tiga kuotasi sewa
@@ -234,10 +234,10 @@ Analisis tersimpan tampil sebagai baris, bukan kartu besar — bagi calon pengus
     "id": "uuid",
     "nama": "Kopi Senja",
     "area": "Tebet, Jakarta Selatan",
-    "skor": 68,
+    "skor": 66,
     "interpretasi": "Layak dengan mitigasi",
-    "rule_version": "lrs-v0.1-unvalidated",
-    "dibuat": "2026-08-06T08:00:00Z"
+    "rule_version": "lrs-v0.2-unvalidated",
+    "dibuat": "2026-08-11T02:30:00Z"
   },
   "rencana_30_hari": { "total": 5, "selesai": 2, "berikutnya": [] },
   "transaksi": {

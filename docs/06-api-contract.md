@@ -140,7 +140,7 @@ Persentase berasal dari weighted stage completion, bukan estimasi palsu per toke
   "status": "completed",
   "readiness": {
     "score": 72,
-    "rule_version": "lrs-v0.1-unvalidated",
+    "rule_version": "lrs-v0.2-unvalidated",
     "interpretation": "layak_dengan_mitigasi",
     "dimensions": []
   },

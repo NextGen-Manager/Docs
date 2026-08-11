@@ -119,6 +119,7 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 - **Jenis usaha dihapus dari alur** atas instruksi pemilik, karena produk memang khusus F&B. Akibatnya **F-03 tinggal separuh** (hanya lokasi), dan **F-08** menampilkan empat topik edukasi yang sama untuk semua pengguna alih-alih dikurasi per jenis usaha. Tercatat di `SimuMarketAI/DEMO-PLAN.md`. Jangan diklaim terpenuhi.
 - **F-10A (foto struk)** tidak ada di tabel kebutuhan fungsional proposal — itu elaborasi di repo `Docs`. Di demo diperlakukan sebagai opsi input kedua, bukan requirement Must.
+- **Bobot aktif Launch Readiness Score adalah `lrs-v0.2-unvalidated`:** 20% saturasi pasar, 25% potensi permintaan, 15% posisi harga, dan 40% kesiapan operasional. Rentang interpretasi tidak berubah; laporan `lrs-v0.1-unvalidated` tetap historis. Keputusan tercatat di `ADR-003`.
 
 ### Versi dan lisensi
 
