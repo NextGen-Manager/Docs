@@ -76,15 +76,14 @@ danger-600  #B3261E   danger-50  #FCEDEC   wajib dilengkapi, gagal
 
 | Peran | Font | Alasan |
 |---|---|---|
-| UI/sans | **Plus Jakarta Sans** | humanis-geometrik, dirancang untuk bahasa Indonesia, angka jelas |
-| Display laporan | **Source Serif 4** | memberi bobot dokumen analis pada judul & ringkasan laporan |
+| UI dan display | **Montserrat** | geometrik, tegas, dan konsisten untuk landing, dashboard, form, serta laporan |
 | Mono | **JetBrains Mono** | ID run, artifact ID, kode, hash |
 
-Serif dipakai **hanya** pada judul laporan dan paragraf ringkasan eksekutif. Sisa aplikasi memakai sans. Pencampuran di luar aturan ini membuat produk terlihat tidak konsisten.
+Montserrat dipakai pada seluruh teks UI dan display. Token `font-serif` dipertahankan sebagai alias kompatibilitas untuk komponen lama, tetapi merender Montserrat agar tidak ada pencampuran keluarga font.
 
 ```text
-display-lg  36/44  serif 700    judul laporan
-display-sm  28/36  serif 700    judul halaman alternatif
+display-lg  36/44  sans 700     judul laporan
+display-sm  28/36  sans 700     judul halaman alternatif
 h1          28/36  sans 700
 h2          22/30  sans 600     judul bagian bernomor
 h3          18/26  sans 600     judul kartu
@@ -318,13 +317,13 @@ Disclaimer respons sintetis melekat di bawah panel, bukan di modal terpisah.
 
 ## S6 — Laporan
 
-Kolom baca 760px, bagian bernomor, judul serif.
+Kolom baca 760px, bagian bernomor, judul Montserrat.
 
 ```text
 [PREDICTION REPORT]  ID report_888bc26a43a1                    [Unduh PDF] [Variasi]
 
-Hasil Simulasi Peluncuran Produk                                        ← serif 36
-Laporan kesiapan peluncuran berdasarkan parameter pasar…                ← serif italic
+Hasil Simulasi Peluncuran Produk                                        ← Montserrat 36
+Laporan kesiapan peluncuran berdasarkan parameter pasar…                ← Montserrat italic
 
 01  Launch Readiness Score                                                        ⌄
     66 /100   Layak dengan mitigasi
