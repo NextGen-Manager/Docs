@@ -2,7 +2,7 @@
 
 Catatan keadaan proyek untuk serah terima antarsesi. Diperbarui setiap sesi berakhir.
 
-**Terakhir diperbarui:** 9 Agustus 2026
+**Terakhir diperbarui:** 13 Agustus 2026
 
 ---
 
@@ -16,15 +16,27 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 
 ## Keadaan sekarang
 
-| Repository | Branch | Commit | Belum di-commit |
+| Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
-| `Docs` | `main` | `HEAD` | bersih setelah handover ini |
-| `SimuMarketAI` (frontend) | `feat/dashboard` | `144f181` | bersih |
-| `SimuMarketAI-BE` | `main` | `2e234bc` | bersih, belum ada kode |
+| `Docs` | `main` | commit ini | bersih setelah handover ini |
+| `SimuMarketAI` (frontend) | `dev` | `f717571` | bersih, `origin/dev` dan `origin/demo` sinkron |
+| `SimuMarketAI-BE` | `dev` | `2e234bc` | bersih, belum ada kode |
 
-**Frontend aktif di `feat/dashboard`** dan sudah di-push ke `origin/feat/dashboard`.
+### Peran branch, ditetapkan 13 Agustus 2026
 
-**Live:** https://simumarket-ai.vercel.app — deploy production dari push ke `main` dijalankan GitHub Actions dengan credential Vercel yang disimpan sebagai GitHub Secrets.
+| Branch | Peran |
+|---|---|
+| `dev` | seluruh pembangunan aplikasi nyata, di kedua repository kode |
+| `demo` | demo yang dibekukan, satu-satunya sumber deploy production |
+| `main` | tidak dipakai selama masa pembangunan |
+
+`dev` sudah ada dan di-push di kedua repository. Frontend `dev` berangkat dari `origin/main` (`c288af5`, hasil merge PR #5), lalu memuat halaman `/demo/langganan` dan kebijakan deploy khusus demo. `feat/dashboard` sudah tidak dipakai lagi.
+
+**Live:** https://simumarket-ai.vercel.app — GitHub Actions men-deploy production **hanya dari push ke `demo`**. Trigger `main` dan trigger manual sudah dicabut. `origin/demo` telah disegarkan ke `f717571` pada 13 Agustus 2026 dan memicu deployment demo terbaru.
+
+### Kalau push ke repo frontend gagal dengan `Internal Server Error`
+
+Bukan ruleset dan bukan izin. Server GitHub gagal me-resolve delta pada thin pack. Ulangi dengan `git push --no-thin`. Sudah terbukti pada 13 Agustus 2026.
 
 ---
 
@@ -35,11 +47,12 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 - `01`–`11` sudah ada sejak awal proyek.
 - `12` workflow aplikasi, `13` UI system dan rencana mock, `14` keputusan tech stack — dibuat di sesi ini.
 - `15` dashboard dan app shell memuat rancangan sidebar, empat keadaan blok utama, destination operasional, dan tabel hak akses per peran.
+- `16` PRD pembangunan MVP: batas scope, pembekuan demo, peran branch, tujuh fase beserta exit criteria, spesifikasi backend dan frontend, dan daftar risiko.
 - `HANDOVER.md` (dokumen ini) menjadi catatan keadaan lintas sesi.
 - `ADR-002` menaikkan frontend ke Next.js 16 karena 14 sudah end of life. Status Accepted.
 - `AGENTS.md` + `CLAUDE.md` di ketiga repository. Masing-masing berdiri sendiri: lima aturan inti ditulis ulang di tiap repo supaya clone tunggal tetap membawanya.
 
-### Frontend (`SimuMarketAI`, branch `feat/dashboard`)
+### Frontend (`SimuMarketAI`, branch `dev`)
 
 Next.js 16 + React 19 + Tailwind v4. `tsc --noEmit` bersih, build lolos, seluruh rute 200.
 
@@ -89,23 +102,41 @@ Dua alasannya: HPP dan marjin adalah data biaya, bukan data operasional — kasi
 
 Tabel hak akses lengkap di `docs/15` telah dikonfirmasi product owner pada 9 Agustus 2026.
 
+### 4. Kasir diundang lewat kode
+
+Ditetapkan **13 Agustus 2026**. Pemilik menghasilkan kode delapan karakter, sekali pakai, berlaku tujuh hari, disimpan sebagai hash dan hanya ditampilkan sekali. Kasir mendaftar akun sendiri lalu menukarkan kode; penukaran membuat baris `memberships` dengan `role` `cashier` untuk satu `business_id`.
+
+Tidak dibangun: undangan lewat email, tautan undangan, kode multi-pakai, dan peran selain `owner` dan `cashier`. Rinciannya di `docs/16`.
+
+### 5. Subscription dikeluarkan dari MVP
+
+Ditetapkan **13 Agustus 2026**. Tidak ada plan, kuota berbayar, maupun integrasi pembayaran di aplikasi nyata. Halaman `/demo/langganan` tetap ada sebagai permukaan demo, bukan fitur.
+
+Konsekuensi: batas jumlah usaha per akun tidak lagi dapat dikaitkan dengan model freemium proposal §5.10 dan harus berupa angka tetap.
+
+### 6. Urutan pembangunan: RBAC lebih dulu, spike OASIS paralel
+
+Ditetapkan **13 Agustus 2026**. Alasan lengkap di `docs/16`. Ringkasnya: kelayakan OASIS dapat dibuktikan satu script berdiri sendiri tanpa API dan tanpa database, sedangkan tenancy adalah parameter setiap query sehingga tidak dapat ditempel belakangan.
+
+Urutan yang lebih penting daripada itu: **jalur analisis deterministik dibangun sebelum OASIS diintegrasikan**, supaya fallback yang diwajibkan `docs/04` menjadi jalur yang benar-benar teruji.
+
 ---
 
 ## Keputusan yang menunggu product owner
 
 Yang **tidak boleh diputuskan sendiri** oleh sesi berikutnya.
 
-### 1. Cara mengundang kasir
+### 1. Batas jumlah usaha per akun
 
-Belum ada di dokumen mana pun. Pilihan: undangan lewat email, kode undangan, atau akun dibuatkan pemilik. Menyentuh alur autentikasi dan privasi.
-
-**Terdampak.** Skema user, `/login`, dan halaman pengaturan usaha yang belum dirancang.
+Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Karena subscription dikeluarkan dari MVP, batas ini harus berupa angka tetap. Usulan: lima.
 
 **Status:** belum diputuskan.
 
-### 2. Batas jumlah usaha per akun
+### 2. Sumber data kompetitor untuk produksi
 
-Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Perlu angka wajar, atau dikaitkan dengan model bisnis freemium di proposal §5.10.
+Demo memakai fixture. `docs/05` menyatakan Google Places butuh review terms lebih dulu, dan Overpass publik adalah shared service yang tidak layak jadi sandaran produksi.
+
+**Terdampak.** Memblokir Fase 3 pada `docs/16`, karena evidence snapshot builder tidak dapat dibangun tanpa sumber yang jelas.
 
 **Status:** belum diputuskan.
 
@@ -128,23 +159,26 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 - **Peta pada demo memakai Leaflet dan tile OpenStreetMap.** Lokasi dan kompetitor tetap fixture demo; pemakaian penyedia data bisnis nyata masih menunggu review lisensi (lihat `docs/05`).
 - **Video edukasi belum ditentukan.** Yang ada baru pemutar kosong.
 
+### Demo dibekukan
+
+**Kemampuan demo tidak boleh berubah dari keadaan 13 Agustus 2026. Ini batas keras dari product owner.** `src/app/demo/**` dan `src/demo/**` hanya boleh disentuh untuk tiga hal: bug yang membuat demo gagal jalan, perbaikan aksesibilitas, dan penyesuaian yang dipaksa kenaikan versi dependency. Tidak ada layar baru, langkah baru, atau data contoh baru. Aplikasi nyata tidak boleh mengimpor apa pun dari `src/demo/`.
+
 ### Utang teknis
 
 - `lenis` masih di `package.json` tetapi **tidak terpakai** setelah transisi landing berpindah dari berbasis gulir ke berbasis pemicu. Sudah tidak masuk bundle. Aman dicopot.
 - `GET /v1/dashboard` perlu tambahan field `keadaan` sesuai `docs/15`. **`docs/06` belum diperbarui** — perbarui pada commit yang sama saat dashboard dikerjakan.
 - Script `lint` frontend masih memakai `next lint`, yang tidak tersedia pada Next.js 16; script test juga belum didefinisikan di `package.json`.
+- **`main` frontend berhenti di `c288af5`** dan tidak dipakai lagi selama masa pembangunan. Isinya sudah termuat seluruhnya di `dev`, jadi ia bukan cabang yang tertinggal melainkan cabang yang ditinggalkan. Jangan menjadikannya rujukan keadaan terkini.
 
 ---
 
-## Langkah berikutnya yang disarankan
+## Langkah berikutnya
 
-Urutan ini mengikuti risiko, bukan kemudahan.
+Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. **Merge `feat/dashboard` ke `main`** di repository frontend setelah review UI.
-2. **Perbarui `docs/06`** dengan field `keadaan` dan scoping `business_id`, sebelum backend menyentuh endpoint dashboard.
-3. Tegakkan RBAC di backend; pergantian peran frontend saat ini hanya kontrol mode demo.
-4. **Perbaiki konfigurasi lint dan test frontend** agar sesuai Next.js 16 dan perintah wajib repository dapat dijalankan.
-5. **Mulai backend.** Roadmap di `docs/09` menempatkan spike OASIS sebagai risiko pertama, bukan integrasi terakhir.
+1. **Fase 0 `docs/16`:** kerangka backend, perbaikan script `lint` dan `test` frontend, dan spike OASIS sebagai script buangan dengan tenggat keras.
+2. **Fase 1 `docs/16`:** identity, tenancy, dan RBAC. Tidak ada fitur lain dimulai sebelum test lintas penyewa dan lintas peran lulus.
+3. **Perbarui `docs/06`** dengan field `keadaan` dan scoping `business_id` sebelum endpoint dashboard disentuh. Utang ini sudah tercatat sejak 9 Agustus 2026 dan belum dibayar.
 
 ---
 

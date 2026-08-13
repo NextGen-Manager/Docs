@@ -27,9 +27,10 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 13. [UI system dan rencana mock interaktif](docs/13-ui-system-and-mock-plan.md)
 14. [Keputusan tech stack dan version pinning](docs/14-tech-stack-decisions.md)
 15. [Dashboard dan app shell](docs/15-dashboard-and-app-shell.md)
-16. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
-17. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
-18. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
+16. [PRD pembangunan MVP](docs/16-prd-mvp.md)
+17. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
+18. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
+19. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
 
 ## Serah terima antarsesi
 

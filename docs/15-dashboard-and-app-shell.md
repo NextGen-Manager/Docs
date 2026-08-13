@@ -321,10 +321,9 @@ Konsekuensi rancangan:
 
 - Sidebar kasir hanya memuat *Dashboard* dan *Catat Transaksi*. Daftar produk beserta harga jual tersedia di dalam form pencatatan, tetapi destination *Produk* tidak dirender karena pengelolaan katalog tetap milik pemilik.
 - Blok utama untuk kasir hanya punya dua keadaan: sudah mencatat hari ini, atau belum. Progres tujuh hari, rencana 30 hari, dan insight tidak tampil.
-- **Butuh mekanisme undangan kasir** yang belum ada di dokumen mana pun: pemilik mengundang lewat email atau kode, kasir menerima, aksesnya terikat satu `business_id`.
+- **Undangan kasir memakai kode**, ditetapkan product owner 13 Agustus 2026. Pemilik menghasilkan kode sekali pakai berumur tujuh hari, kasir mendaftar sendiri lalu menukarkannya, dan aksesnya terikat satu `business_id`. Rinciannya di [PRD pembangunan MVP](16-prd-mvp.md).
 - Pembatasan ditegakkan di **repository layer backend**, bukan hanya dengan menyembunyikan menu. Aturan ini sudah tertulis di `AGENTS.md` backend.
 
 ## Yang masih perlu diputuskan
 
-1. **Cara mengundang kasir** — lewat email, kode undangan, atau akun dibuatkan pemilik. Menyentuh privasi dan alur autentikasi.
-2. **Batas jumlah usaha per akun.** Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Perlu angka wajar, atau dikaitkan dengan model bisnis freemium di proposal §5.10.
+1. **Batas jumlah usaha per akun.** Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisis. Karena subscription dikeluarkan dari MVP pada 13 Agustus 2026, batas ini tidak lagi dapat dikaitkan dengan model freemium proposal §5.10 dan harus berupa angka tetap.
