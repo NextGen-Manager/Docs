@@ -2,7 +2,7 @@
 
 Catatan keadaan proyek untuk serah terima antarsesi. Diperbarui setiap sesi berakhir.
 
-**Terakhir diperbarui:** 13 Agustus 2026
+**Terakhir diperbarui:** 14 Agustus 2026
 
 ---
 
@@ -19,8 +19,8 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
 | `Docs` | `main` | commit ini | bersih setelah handover ini |
-| `SimuMarketAI` (frontend) | `dev` | `f717571` | bersih, `origin/dev` dan `origin/demo` sinkron |
-| `SimuMarketAI-BE` | `dev` | `2e234bc` | bersih, belum ada kode |
+| `SimuMarketAI` (frontend) | `dev` | `5aba8cd` | bersih dan sinkron dengan `origin/dev`; CI sedang diverifikasi |
+| `SimuMarketAI-BE` | `dev` | `dfb63df` | bersih dan sinkron dengan `origin/dev`; CI sedang diverifikasi |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -56,9 +56,14 @@ Bukan ruleset dan bukan izin. Server GitHub gagal me-resolve delta pada thin pac
 
 Next.js 16 + React 19 + Tailwind v4. `tsc --noEmit` bersih, build lolos, seluruh rute 200.
 
+Fondasi Fase 0 sudah menambahkan ESLint flat config, Vitest, Playwright, script pemeriksaan, dan workflow CI. Dependency `lenis` yang tidak terpakai sudah dicopot.
+
 **Aplikasi sebenarnya:**
-- `/` landing sinematik — lima adegan penuh layar, transisi dipicu gerakan (bukan gulir), batas larut bertekstur, parallax tiga lapis.
-- `/login` halaman masuk. Formnya belum tersambung ke apa pun.
+- `/` landing sinematik; `/masuk` dan `/daftar` tersambung ke session backend melalui same-origin proxy. Token tetap berada di cookie `HttpOnly`.
+- App shell membedakan onboarding, pemilik, dan kasir. Sidebar kasir hanya memuat *Beranda* dan *Catat transaksi*.
+- `/beranda` memakai field `keadaan` dari backend dan menampilkan dashboard komposit pemilik atau ringkasan toko kasir.
+- `/produk`, `/transaksi`, `/transaksi/catat`, `/analitik`, dan `/pengaturan` memakai data API nyata dengan pemilih usaha lokal. Frontend hanya memformat uang dan tidak menghitung agregat.
+- Verifikasi lokal 14 Agustus 2026: lint, typecheck, 9 unit test, 2 E2E Chromium, dan production build lulus. E2E pencatatan transaksi lulus batas 10 detik dengan CPU throttling 4×.
 
 **Demo (`/demo/*`), seluruhnya data contoh:**
 - Journey A: `/demo/analisis/input` (peta, produk, modal) → `/demo/edukasi` (gerbang F-09) → `/demo/analisis/konfirmasi` → `/demo/analisis/proses` (empat agent) → `/demo/laporan/{id}` → `/demo/diskusi`.
@@ -68,7 +73,13 @@ Next.js 16 + React 19 + Tailwind v4. `tsc --noEmit` bersih, build lolos, seluruh
 
 ### Backend (`SimuMarketAI-BE`)
 
-Belum ada kode. Baru README dan aturan coding.
+Fondasi Fase 0 tersedia di branch `dev`: FastAPI, konfigurasi environment, bentuk error stabil, correlation ID, PostgreSQL 16 dengan pgvector, Alembic, Redis, Docker Compose, health/readiness endpoint, dan workflow CI. Verifikasi lokal 13 Agustus 2026: Ruff, format check, mypy, 16 test, migrasi Alembic, serta health/readiness API melalui container lulus.
+
+Fase 1–2 tersedia di working tree: Argon2, access/refresh cookie dengan rotation dan revocation, rate limit auth, business membership per tenant, kode kasir delapan karakter sekali pakai, audit event, serta penegakan 404 lintas penyewa/peran. Operasional mencakup produk, transaksi atomik dan idempotent per `(business_id, client_reference)`, dashboard backend-owned, gate tujuh hari, golden transaction analytics, dan insight rule-versioned. Router hanya memanggil service; repository menerima scope tenant.
+
+Verifikasi lokal 14 Agustus 2026: Ruff, format check, mypy, dan 28 test lulus. PostgreSQL mencapai Alembic `0005`; `alembic check` melaporkan tidak ada schema drift. Smoke test container lulus untuk register, refresh rotation, pembuatan usaha dan produk, transaksi dengan total backend Rp36.000, serta dashboard. Bug migrasi `memberships.created_at` yang ditemukan smoke test sudah ditutup lewat migrasi korektif `0004`.
+
+Spike OASIS ditempatkan terisolasi di `spikes/oasis` dengan environment dan lockfile sendiri karena `camel-oasis==0.2.5` mengunci `pytest-asyncio==0.23.6`, sedangkan dependency transitif `mcp` perlu dibatasi `<2` agar `camel-ai==0.2.78` dapat diimpor. Spike sudah memiliki empat profil agent, schema artifact dan ballot, trace unik, hard limit, metrik token dan durasi, serta finance integer-rupiah deterministik. Dependency probe dan lima test spike lulus. Run Gemini live dan benchmark berulang belum dijalankan karena `GEMINI_API_KEY` belum tersedia; Fase 0 belum memenuhi exit criteria sampai hasil nyata dicatat di `docs/14`.
 
 ---
 
@@ -165,9 +176,6 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 ### Utang teknis
 
-- `lenis` masih di `package.json` tetapi **tidak terpakai** setelah transisi landing berpindah dari berbasis gulir ke berbasis pemicu. Sudah tidak masuk bundle. Aman dicopot.
-- `GET /v1/dashboard` perlu tambahan field `keadaan` sesuai `docs/15`. **`docs/06` belum diperbarui** — perbarui pada commit yang sama saat dashboard dikerjakan.
-- Script `lint` frontend masih memakai `next lint`, yang tidak tersedia pada Next.js 16; script test juga belum didefinisikan di `package.json`.
 - **`main` frontend berhenti di `c288af5`** dan tidak dipakai lagi selama masa pembangunan. Isinya sudah termuat seluruhnya di `dev`, jadi ia bukan cabang yang tertinggal melainkan cabang yang ditinggalkan. Jangan menjadikannya rujukan keadaan terkini.
 
 ---
@@ -176,9 +184,9 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. **Fase 0 `docs/16`:** kerangka backend, perbaikan script `lint` dan `test` frontend, dan spike OASIS sebagai script buangan dengan tenggat keras.
-2. **Fase 1 `docs/16`:** identity, tenancy, dan RBAC. Tidak ada fitur lain dimulai sebelum test lintas penyewa dan lintas peran lulus.
-3. **Perbarui `docs/06`** dengan field `keadaan` dan scoping `business_id` sebelum endpoint dashboard disentuh. Utang ini sudah tercatat sejak 9 Agustus 2026 dan belum dibayar.
+1. Pastikan CI untuk frontend `5aba8cd` dan backend `dfb63df` hijau di GitHub.
+2. Tuntaskan sisa Fase 0 saat Gemini API key tersedia: jalankan spike berulang dan catat benchmark nyata ke `docs/14`.
+3. Sebelum Fase 3, product owner perlu memutuskan sumber data kompetitor produksi. Jalur analisis deterministik tidak boleh memakai fixture sebagai evidence nyata.
 
 ---
 
