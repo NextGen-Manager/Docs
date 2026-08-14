@@ -13,7 +13,9 @@
 ```mermaid
 erDiagram
     USER ||--o{ AUTH_SESSION : owns
-    USER ||--o{ BUSINESS_PROFILE : owns
+    USER ||--o{ MEMBERSHIP : has
+    BUSINESS_PROFILE ||--o{ MEMBERSHIP : grants
+    BUSINESS_PROFILE ||--o{ BUSINESS_INVITE : issues
     USER ||--o{ ANALYSIS_RUN : creates
     USER ||--o{ TRANSACTION : records
     USER ||--o{ RECEIPT_IMPORT : uploads
@@ -43,6 +45,44 @@ erDiagram
     REPORT ||--o{ EXPORT_ARTIFACT : renders
     USER ||--o{ AUDIT_EVENT : acts
 ```
+
+## Identity dan tenancy
+
+### `users` dan `auth_sessions`
+
+`users` menyimpan email unik, display name, Argon2 password hash, status aktif, dan timestamp. `auth_sessions` hanya menyimpan hash refresh token, masa berlaku, waktu penggunaan terakhir, status revoke, dan pointer ke session pengganti. Refresh token mentah tidak disimpan.
+
+### `memberships`
+
+```text
+id uuid PK
+user_id uuid FK
+business_id uuid FK
+role enum(owner,cashier)
+created_at timestamptz
+```
+
+Kombinasi `(user_id, business_id)` unik. Tenant aktif selalu diturunkan dari membership pada repository query. Role tidak diletakkan pada tabel user karena satu user dapat menjadi owner pada satu usaha dan kasir pada usaha lain.
+
+### `business_invites`
+
+Undangan menyimpan `business_id`, pembuat, hash kode, `expires_at`, serta status redeemed/revoked. Kode mentah hanya dikembalikan sekali ketika dibuat. Penukaran kode dan pembuatan membership dilakukan dalam satu database transaction.
+
+## Product dan transaksi
+
+### `products`
+
+```text
+id uuid PK
+business_id uuid FK
+name text
+selling_price_idr bigint
+hpp_idr bigint
+is_active boolean
+created_at/updated_at timestamptz
+```
+
+Kombinasi `(business_id, name)` unik. Uang berupa integer rupiah non-negatif. Margin tidak disimpan karena dihitung deterministik saat response owner dibentuk. Response kasir tidak memuat HPP maupun margin.
 
 ## Analysis tables
 
@@ -98,8 +138,8 @@ Artifact type minimum: `MarketAssessment`, `CustomerSimulationResult`, `FinanceS
 
 ```text
 id uuid PK
-user_id uuid FK
-business_profile_id uuid FK
+business_id uuid FK
+recorded_by_user_id uuid FK
 receipt_import_id uuid nullable FK
 occurred_at timestamptz
 channel enum
@@ -109,7 +149,20 @@ client_reference text nullable
 created_at/updated_at timestamptz
 ```
 
-Unique constraint `(user_id, client_reference)` ketika reference tidak null.
+Unique constraint `(business_id, client_reference)` ketika reference tidak null. Tenant, bukan perangkat atau user pencatat, menentukan batas idempotensi.
+
+### `transaction_items`
+
+```text
+id uuid PK
+transaction_id uuid FK
+product_id uuid FK
+quantity integer
+unit_price_idr bigint
+line_total_idr bigint
+```
+
+`quantity` harus positif. Harga satuan dan line total harus non-negatif. Backend memverifikasi produk berada pada `business_id` yang sama, lalu menghitung line total dan gross total di dalam satu database transaction.
 
 ### `receipt_imports`
 
@@ -167,4 +220,3 @@ Partition transaksi belum diperlukan pada skala MVP; desain kolom waktu dan tena
 - Rule/prompt/model/evidence version selalu disimpan pada run.
 - Soft delete tidak menggantikan privacy deletion; purge job menghapus data dan object sesuai retention.
 - Foreign key dan tenant ownership diverifikasi pada service/repository layer serta test lintas user.
-

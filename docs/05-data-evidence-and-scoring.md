@@ -182,7 +182,9 @@ MVP memakai query/rule deterministic:
 - no-sale streak berdasarkan hari operasi;
 - data completeness dan hari tercatat.
 
-Hindari rekomendasi “hapus produk” hanya karena penjualan rendah. Pertimbangkan availability, margin, jumlah hari, dan apakah produk baru. Insight harus menyebut observation window.
+Gate awal membutuhkan transaksi pada tujuh tanggal lokal berbeda menurut zona `Asia/Jakarta`. Sebelum gate terpenuhi, endpoint mengembalikan status `collecting` tanpa agregat sementara. Minimum exposure produk pada rule `transaction-insight-v1` adalah tujuh hari sejak produk dibuat sampai akhir observation window. Produk yang belum memenuhi exposure tetap dapat muncul pada daftar penjualan, tetapi tidak dipilih sebagai produk terbawah dan keterbatasan ini disebut eksplisit.
+
+Hindari rekomendasi “hapus produk” hanya karena penjualan rendah. Pertimbangkan availability, margin, jumlah hari, dan apakah produk baru. Setiap insight menyebut `observation_window`, timezone, dan `rule_version`.
 
 ## Data model foto struk
 
