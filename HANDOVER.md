@@ -19,8 +19,8 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
 | `Docs` | `main` | commit ini | bersih setelah handover ini |
-| `SimuMarketAI` (frontend) | `dev` | `5aba8cd` | bersih dan sinkron dengan `origin/dev`; CI sedang diverifikasi |
-| `SimuMarketAI-BE` | `dev` | `dfb63df` | bersih dan sinkron dengan `origin/dev`; CI sedang diverifikasi |
+| `SimuMarketAI` (frontend) | `dev` | `5aba8cd` | bersih dan sinkron dengan `origin/dev`; CI hijau |
+| `SimuMarketAI-BE` | `dev` | `dfb63df` | bersih dan sinkron dengan `origin/dev`; CI hijau |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -184,9 +184,8 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. Pastikan CI untuk frontend `5aba8cd` dan backend `dfb63df` hijau di GitHub.
-2. Tuntaskan sisa Fase 0 saat Gemini API key tersedia: jalankan spike berulang dan catat benchmark nyata ke `docs/14`.
-3. Sebelum Fase 3, product owner perlu memutuskan sumber data kompetitor produksi. Jalur analisis deterministik tidak boleh memakai fixture sebagai evidence nyata.
+1. Tuntaskan sisa Fase 0 saat Gemini API key tersedia: jalankan spike berulang dan catat benchmark nyata ke `docs/14`.
+2. Sebelum Fase 3, product owner perlu memutuskan sumber data kompetitor produksi. Jalur analisis deterministik tidak boleh memakai fixture sebagai evidence nyata.
 
 ---
 
