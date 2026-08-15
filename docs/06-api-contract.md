@@ -198,6 +198,18 @@ Response `202 Accepted`:
 
 Persentase berasal dari weighted stage completion, bukan estimasi palsu per token.
 
+## Analysis progress event
+
+`GET /v1/analyses/{id}/events` mengirim event SSE bernama `status`. Setiap transisi disimpan ke PostgreSQL sebelum dipublikasikan. Redis hanya transport, bukan system of record. Browser dapat mengirim header `Last-Event-ID`; server melanjutkan dari sequence berikutnya tanpa mengulang event lama.
+
+```text
+id: 4
+event: status
+data: {"schema_version":"analysis-event-v1","event_id":"4","analysis_id":"8ff7d369-924a-4d6e-ac0e-4c94aa868d0a","status":"simulating","current_stage":"simulating","completed_stages":["queued","collecting_evidence","building_context"],"skipped_stages":[],"percent":45,"message":"Panel persona sedang mengevaluasi skenario","warnings":[],"failure_code":null,"correlation_id":"c2f50d3c-d97f-4c19-96bd-abd40d4dc6ef","occurred_at":"2026-08-15T08:01:20Z"}
+```
+
+`event_id` meningkat monotonik per analysis. `failure_code` bernilai `null` pada run normal dan membawa kode aman pada kegagalan terminal. Client tidak boleh menebak penyebab kegagalan dari urutan `warnings`. Jika SSE berulang kali terputus, frontend mengambil snapshot otoritatif melalui `GET /v1/analyses/{id}` setiap tiga detik. Snapshot polling tidak dibandingkan dengan `event_id` sintetis karena ia membaca state terbaru secara langsung.
+
 ## Report shape minimum
 
 ```json
