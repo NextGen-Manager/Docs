@@ -2,7 +2,7 @@
 
 Catatan keadaan proyek untuk serah terima antarsesi. Diperbarui setiap sesi berakhir.
 
-**Terakhir diperbarui:** 14 Agustus 2026
+**Terakhir diperbarui:** 15 Agustus 2026
 
 ---
 
@@ -18,9 +18,9 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
-| `Docs` | `main` | commit ini | bersih setelah handover ini |
-| `SimuMarketAI` (frontend) | `dev` | `5aba8cd` | bersih dan sinkron dengan `origin/dev`; CI hijau |
-| `SimuMarketAI-BE` | `dev` | `dfb63df` | bersih dan sinkron dengan `origin/dev`; CI hijau |
+| `Docs` | `main` | `4b72c11` | pembaruan handover, roadmap, dan kontrak SSE belum di-commit |
+| `SimuMarketAI` (frontend) | `feat/phase4-oasis-orchestration` | `9568d88` | hardening SSE dan test fallback belum di-commit |
+| `SimuMarketAI-BE` | `feat/phase4-oasis-orchestration` | `4bdbf0e` | penyelesaian council runtime, recovery, migrasi `0008`, dan test belum di-commit |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -63,7 +63,11 @@ Fondasi Fase 0 sudah menambahkan ESLint flat config, Vitest, Playwright, script 
 - App shell membedakan onboarding, pemilik, dan kasir. Sidebar kasir hanya memuat *Beranda* dan *Catat transaksi*.
 - `/beranda` memakai field `keadaan` dari backend dan menampilkan dashboard komposit pemilik atau ringkasan toko kasir.
 - `/produk`, `/transaksi`, `/transaksi/catat`, `/analitik`, dan `/pengaturan` memakai data API nyata dengan pemilih usaha lokal. Frontend hanya memformat uang dan tidak menghitung agregat.
-- Verifikasi lokal 14 Agustus 2026: lint, typecheck, 9 unit test, 2 E2E Chromium, dan production build lulus. E2E pencatatan transaksi lulus batas 10 detik dengan CPU throttling 4×.
+- `/edukasi`, `/edukasi/{id}`, `/analisis`, `/analisis/riwayat`, `/laporan`, dan `/laporan/{id}` sudah menjadi rute aplikasi nyata. DTO berada di `src/lib/contracts`; report menampilkan rule version, confidence, evidence, missing evidence, warning, limitation, status simulasi, dan disclaimer.
+- Frontend tidak menghitung ulang score atau finance. Contract test sengaja mengirim nilai pendapatan yang berbeda satu rupiah dari hasil hitung input dan memastikan UI tetap menampilkan nilai server.
+- `/analisis/{id}` mengikuti event worker melalui SSE, melanjutkan stream memakai `Last-Event-ID`, lalu berpindah ke polling snapshot otoritatif bila koneksi berulang kali gagal. Penyebab kegagalan memakai `failure_code` dari server, bukan ditebak dari warning.
+- Bagian simulasi menampilkan cohort, round, objection, acceptable price band, kutipan berlabel *respons sintetis*, manifest agent, dan keterbatasan tanpa menghitung ulang angka server.
+- Verifikasi Phase 3 pada 15 Agustus 2026: lint dan typecheck bersih, 31 unit/component test serta empat E2E Chromium lulus, production build berhasil, dan `npm audit --omit=dev` melaporkan nol vulnerability. Setelah review kontrak, focused report test sebanyak 10 kasus juga lulus.
 
 **Demo (`/demo/*`), seluruhnya data contoh:**
 - Journey A: `/demo/analisis/input` (peta, produk, modal) → `/demo/edukasi` (gerbang F-09) → `/demo/analisis/konfirmasi` → `/demo/analisis/proses` (empat agent) → `/demo/laporan/{id}` → `/demo/diskusi`.
@@ -73,13 +77,36 @@ Fondasi Fase 0 sudah menambahkan ESLint flat config, Vitest, Playwright, script 
 
 ### Backend (`SimuMarketAI-BE`)
 
-Fondasi Fase 0 tersedia di branch `dev`: FastAPI, konfigurasi environment, bentuk error stabil, correlation ID, PostgreSQL 16 dengan pgvector, Alembic, Redis, Docker Compose, health/readiness endpoint, dan workflow CI. Verifikasi lokal 13 Agustus 2026: Ruff, format check, mypy, 16 test, migrasi Alembic, serta health/readiness API melalui container lulus.
+Fondasi Fase 0 tersedia di branch `dev`: FastAPI, konfigurasi environment, bentuk error stabil, correlation ID, PostgreSQL 16 dengan pgvector, Alembic, Redis, Docker Compose, health/readiness endpoint, dan workflow CI.
 
-Fase 1–2 tersedia di working tree: Argon2, access/refresh cookie dengan rotation dan revocation, rate limit auth, business membership per tenant, kode kasir delapan karakter sekali pakai, audit event, serta penegakan 404 lintas penyewa/peran. Operasional mencakup produk, transaksi atomik dan idempotent per `(business_id, client_reference)`, dashboard backend-owned, gate tujuh hari, golden transaction analytics, dan insight rule-versioned. Router hanya memanggil service; repository menerima scope tenant.
+Fase 1–2 sudah di-commit dan di-push ke `dev`: Argon2, access/refresh cookie dengan rotation dan revocation, rate limit auth, business membership per tenant, kode kasir delapan karakter sekali pakai, audit event, serta penegakan 404 lintas penyewa/peran. Operasional mencakup produk, transaksi atomik dan idempotent per `(business_id, client_reference)`, dashboard backend-owned, gate tujuh hari, golden transaction analytics, dan insight rule-versioned. Router hanya memanggil service; repository menerima scope tenant.
 
-Verifikasi lokal 14 Agustus 2026: Ruff, format check, mypy, dan 28 test lulus. PostgreSQL mencapai Alembic `0005`; `alembic check` melaporkan tidak ada schema drift. Smoke test container lulus untuk register, refresh rotation, pembuatan usaha dan produk, transaksi dengan total backend Rp36.000, serta dashboard. Bug migrasi `memberships.created_at` yang ditemukan smoke test sudah ditutup lewat migrasi korektif `0004`.
+Fondasi deterministik Fase 3 sudah di-commit dan di-push ke `dev`:
+
+- contract `EvidenceRecord`, `MissingEvidence`, dan `EvidenceProvider`; runtime tanpa sumber nyata mengembalikan missing evidence, sedangkan fixture hanya tersedia di test dan ditolak pada staging/production;
+- finance engine sesuai formula `docs/05`, memakai integer rupiah dan `Decimal` untuk rasio, dengan hasil `null` dan warning ketika BEP atau payback tidak terdefinisi;
+- scoring `lrs-v0.2-unvalidated` dengan bobot 20/25/15/40, tanpa default score dan tanpa reweight saat dimensi tidak dapat dinilai;
+- report composer dan validator deterministik yang terpisah dari `integrations/`, memeriksa aritmetika dan provenance angka pasar;
+- education module/version/progress/knowledge check serta gate F-09; tidak adanya konten terbit menghasilkan `EDUCATION_CONTENT_UNAVAILABLE`, bukan kelulusan kosong;
+- analysis input snapshot, evidence item, report record, correlation ID, idempotency, state progression, structured warning, failure code, endpoint report/history, dan endpoint SSE satu-event yang valid sebagai contract awal Phase 4;
+- retry dengan `Idempotency-Key` yang sama mengembalikan run lama hanya untuk payload yang sama; payload berbeda ditolak `409` dan race tidak mengeksekusi run yang sama dua kali.
+
+Verifikasi lokal 15 Agustus 2026: Ruff, format check, mypy, dan 110 test backend lulus. Migrasi Alembic `0001` sampai `0006`, downgrade `0005` lalu upgrade kembali, dan `alembic check` sudah lulus pada PostgreSQL 16 kosong saat handoff Phase 3.
 
 Spike OASIS ditempatkan terisolasi di `spikes/oasis` dengan environment dan lockfile sendiri karena `camel-oasis==0.2.5` mengunci `pytest-asyncio==0.23.6`, sedangkan dependency transitif `mcp` perlu dibatasi `<2` agar `camel-ai==0.2.78` dapat diimpor. Spike sudah memiliki empat profil agent, schema artifact dan ballot, trace unik, hard limit, metrik token dan durasi, serta finance integer-rupiah deterministik. Dependency probe dan lima test spike lulus. Run Gemini live dan benchmark berulang belum dijalankan karena `GEMINI_API_KEY` belum tersedia; Fase 0 belum memenuhi exit criteria sampai hasil nyata dicatat di `docs/14`.
+
+Implementasi Fase 4 tersedia di branch feature dan belum di-commit seluruhnya:
+
+- `POST /v1/analyses` hanya menyimpan run `queued`, lalu Celery worker menjalankan state machine penuh. API, worker, dan Celery beat dipisah di Docker Compose.
+- Empat council berjalan melalui orchestrator yang sama untuk adapter fake dan live. Market melakukan deliberasi evidence, persona menjalankan baseline, exposure, interaction, intervention, dan final ballot, Finance memanggil calculator deterministik lebih dulu, lalu Report hanya menerima artifact upstream yang lolos validasi.
+- Payload provider memakai allowlist `SimulationRequest`, identifier di-hash, contact detail dan URL di-redact, dan user text dibungkus sebagai untrusted data. Social action dan interview ikut dihitung dalam token serta wall-clock budget.
+- PostgreSQL menyimpan event, agent run, instance, artifact, trace metadata, model/prompt manifest, lease, dan attempt count melalui migrasi `0007` dan `0008`. Recovery memakai conditional transition dan fencing agar worker lama tidak dapat menimpa run baru atau menghapus report yang baru selesai.
+- Kegagalan OASIS menghasilkan report `partial` dengan bagian deterministik tetap tersedia. Schema, citation, numeric provenance, dan arithmetic validator menolak artifact yang menciptakan evidence atau angka baru.
+- Adapter live sudah type-checked dan binding `camel-oasis` 0.2.5 sudah diperiksa terhadap API package. Dua test live sengaja `skip` selama `GEMINI_API_KEY` kosong; hasil schema, latency, token, dan stabilitas provider nyata belum boleh diklaim.
+- Import probe image worker menemukan `mcp==2.0.0` tidak kompatibel dengan CAMEL 0.2.78. Extra OASIS sekarang memin `mcp<2` dan lockfile menghasilkan 1.29.0. Image final berhasil mengimpor OASIS/CAMEL, memuat adapter live, serta mendaftarkan task `analysis.run` dan `analysis.recover`.
+- Worker dan Celery beat berhasil hidup sebagai user non-root `simumarket`, terhubung ke Redis, dan menjawab `celery inspect ping`. Beat menyimpan scheduler di `/tmp`, sedangkan trace memakai volume khusus.
+- Verifikasi final 15 Agustus 2026: backend Ruff, format check, dan mypy bersih; 207 test lulus dan dua test Gemini live skip secara eksplisit. Migrasi PostgreSQL kosong lulus `0001` sampai `0008`, `alembic check`, downgrade `0008` ke `0007`, lalu upgrade ulang. Frontend lint/typecheck bersih, 57 test dan tujuh E2E Chromium lulus, production build berhasil, serta audit production dependency melaporkan nol vulnerability.
+- Database dev lokal sempat memiliki schema `0008` dengan revision marker `0007` akibat file migrasi lama yang pernah diedit. Tipe kolom, nullability, default, dan indeks diperiksa satu per satu sebelum marker di-stamp ke `0008`; `alembic check` kemudian lulus tanpa perubahan schema atau data.
 
 ---
 
@@ -147,9 +174,25 @@ Tanpa batas, satu akun bisa membuat ratusan usaha dan menghabiskan kuota analisi
 
 Demo memakai fixture. `docs/05` menyatakan Google Places butuh review terms lebih dulu, dan Overpass publik adalah shared service yang tidak layak jadi sandaran produksi.
 
-**Terdampak.** Memblokir Fase 3 pada `docs/16`, karena evidence snapshot builder tidak dapat dibangun tanpa sumber yang jelas.
+**Terdampak.** Contract dan fallback evidence sudah tersedia, tetapi run produksi tetap `partial` sampai adapter sumber nyata dipilih dan direview lisensinya.
 
 **Status:** belum diputuskan.
+
+### 3. Threshold rule scoring dan bobot Evidence Confidence
+
+Bobot dimensi LRS 20%/25%/15%/40% sudah ditetapkan, tetapi batas rule `MS-*`, `DP-*`, `PP-*`, dan `OR-*` belum berasal dari expert review. Implementasi menyebutnya `lrs-v0.2-unvalidated`. Bobot internal formula `evidence-confidence-v0.1-unvalidated` juga masih hipotesis.
+
+Keduanya boleh dipakai untuk integrasi teknis dan calibration run, tetapi tidak boleh dipresentasikan sebagai model yang sudah sahih. Perubahan threshold atau bobot setelah review wajib membuat versi rule baru dan ADR sebelum implementasi.
+
+**Status:** menunggu product owner dan expert review.
+
+### 4. Normalisasi penyimpanan hasil finance dan score
+
+`evidence_items` sudah relasional, sedangkan finance scenario dan score result saat ini tersimpan di payload versioned `analysis_reports`. ERD `docs/10` masih menargetkan tabel `FINANCE_SCENARIO` dan `SCORE_RESULT` tersendiri.
+
+Ini tidak memblokir integrasi OASIS Phase 4, tetapi harus diselesaikan sebelum schema persistence dinyatakan memenuhi ERD penuh atau sebelum query lintas report membutuhkan hasil terstruktur.
+
+**Status:** utang implementasi yang belum dijadwalkan.
 
 ---
 
@@ -177,6 +220,7 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 ### Utang teknis
 
 - **`main` frontend berhenti di `c288af5`** dan tidak dipakai lagi selama masa pembangunan. Isinya sudah termuat seluruhnya di `dev`, jadi ia bukan cabang yang tertinggal melainkan cabang yang ditinggalkan. Jangan menjadikannya rujukan keadaan terkini.
+- **Image worker OASIS sekitar 2,97 GB** karena dependency Torch/CUDA transitif. Ini tidak memblokir fungsi Fase 4, tetapi perlu CPU-only dependency audit sebelum deployment aplikasi nyata agar waktu pull dan penggunaan disk tidak berlebihan.
 
 ---
 
@@ -184,8 +228,10 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. Tuntaskan sisa Fase 0 saat Gemini API key tersedia: jalankan spike berulang dan catat benchmark nyata ke `docs/14`.
-2. Sebelum Fase 3, product owner perlu memutuskan sumber data kompetitor produksi. Jalur analisis deterministik tidak boleh memakai fixture sebagai evidence nyata.
+1. Saat Gemini API key tersedia, jalankan test live dan benchmark berulang. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
+2. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
+3. Setelah perubahan Fase 4 direview dan di-commit per fungsi, merge branch feature ke `dev` di kedua repository kode.
+4. Lanjutkan Fase 5: OCR review/confirm, export PDF async, private object storage, dan retention job. Scenario comparison tetap Should bila waktu tersedia.
 
 ---
 
