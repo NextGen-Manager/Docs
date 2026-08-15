@@ -18,9 +18,9 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
-| `Docs` | `main` | `8201770` | pembaruan roadmap dan handover belum di-commit |
-| `SimuMarketAI` (frontend) | `feat/phase4-oasis-orchestration` | `678fdcf` | bersih; tidak terdampak hardening runtime |
-| `SimuMarketAI-BE` | `feat/phase4-oasis-orchestration` | `b050140` | bersih; tiga commit hardening lokal belum di-push |
+| `Docs` | `main` | `3ec6787` | pembaruan handover merge Fase 4 belum di-commit |
+| `SimuMarketAI` (frontend) | `feat/phase5-receipt-export` | `b5cb12d` | bersih; branch baru dari `dev` setelah merge Fase 4 |
+| `SimuMarketAI-BE` | `feat/phase5-receipt-export` | `a004466` | bersih; branch baru dari `dev` setelah merge Fase 4 |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -95,7 +95,7 @@ Verifikasi lokal 15 Agustus 2026: Ruff, format check, mypy, dan 110 test backend
 
 Spike OASIS ditempatkan terisolasi di `spikes/oasis` dengan environment dan lockfile sendiri karena `camel-oasis==0.2.5` mengunci `pytest-asyncio==0.23.6`, sedangkan dependency transitif `mcp` perlu dibatasi `<2` agar `camel-ai==0.2.78` dapat diimpor. Spike sudah memiliki empat profil agent, schema artifact dan ballot, trace unik, hard limit, metrik token dan durasi, serta finance integer-rupiah deterministik. Dependency probe dan lima test spike lulus. Run Gemini live dan benchmark berulang belum dijalankan karena `GEMINI_API_KEY` belum tersedia; Fase 0 belum memenuhi exit criteria sampai hasil nyata dicatat di `docs/14`.
 
-Baseline implementasi Fase 4 sudah di-commit dan di-push pada branch `feat/phase4-oasis-orchestration`. Hardening live adapter tanggal 16 Agustus 2026 sudah di-commit lokal per fungsi dan menunggu push serta review:
+Implementasi dan hardening Fase 4 sudah di-commit per fungsi, dipush, lalu digabung ke `dev` pada frontend dan backend tanggal 16 Agustus 2026:
 
 - `POST /v1/analyses` hanya menyimpan run `queued`, lalu Celery worker menjalankan state machine penuh. API, worker, dan Celery beat dipisah di Docker Compose.
 - Empat council berjalan melalui orchestrator yang sama untuk adapter fake dan live. Market melakukan deliberasi evidence, persona menjalankan baseline, exposure, interaction, intervention, dan final ballot, Finance memanggil calculator deterministik lebih dulu, lalu Report hanya menerima artifact upstream yang lolos validasi.
@@ -234,11 +234,10 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. Review hasil hardening yang sudah lulus verifikasi container, lalu push tiga commit backend pada branch Phase 4.
+1. Mulai Fase 5 dari private object storage, lalu OCR review/confirm, export PDF async, dan retention job pada branch `feat/phase5-receipt-export` di kedua repository kode.
 2. Saat Gemini API key tersedia, jalankan test live dan benchmark berulang. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
 3. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
-4. Setelah perubahan Fase 4 direview, merge branch feature ke `dev` di kedua repository kode.
-5. Lanjutkan Fase 5: OCR review/confirm, export PDF async, private object storage, dan retention job. Scenario comparison tetap Should bila waktu tersedia.
+4. Scenario comparison tetap Should dan hanya dikerjakan bila scope Must Fase 5 sudah lulus E2E.
 
 ---
 
