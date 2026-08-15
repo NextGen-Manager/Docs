@@ -1,5 +1,19 @@
 # Roadmap MVP
 
+## Status implementasi per 15 Agustus 2026
+
+Status ditulis berdasarkan artifact yang sudah ada, bukan persentase.
+
+| Tahap | Artifact yang sudah ada | Artifact berikutnya |
+|---|---|---|
+| Sprint 0 | Contract API dan schema, CI frontend/backend, Docker Compose, spike empat profil OASIS terisolasi, hard limit, unique trace, deterministic finance tool, serta test dependency | Benchmark Gemini live berulang setelah API key tersedia; evidence source/license decision |
+| Sprint 1 | Auth dan RBAC tenant, education gate, input snapshot, evidence contract, finance/scoring/report engine deterministik, analysis history/report API, UI education/analysis/report, dan Alembic `0006` | Expert review threshold serta content edukasi produksi |
+| Sprint 2 | Celery worker terpisah, live SSE dengan replay, recovery lease, adapter OASIS live/fake/unavailable, empat council, cohort seimbang, protokol round, typed artifact, manifest dan trace persistence, hard budget, fallback `partial`, serta UI progress dan simulasi | Benchmark Gemini live dan pembekuan ukuran cohort/round setelah API key tersedia; scenario comparison sebagai fitur Should |
+| Sprint 3 | Product, transaksi manual, dashboard, gate tujuh hari, analytics dan insight deterministik | OCR upload/review/confirm, batch flow penuh, private object storage, PDF export, retention job |
+| Sprint 4 | Unit, integration, contract, RBAC, finance/scoring golden test, dan E2E dasar | Calibration, usability, accessibility, security, load, backup/restore, ablation, dan release evidence |
+
+Detail commit dan keputusan yang masih menunggu berada di [`../HANDOVER.md`](../HANDOVER.md).
+
 ## Delivery principle
 
 Bangun satu vertical slice yang dapat didemonstrasikan lebih awal. OASIS adalah spike risiko pertama, bukan integrasi terakhir. Setiap sprint harus menghasilkan artifact yang dapat diuji dan tidak bergantung pada klaim “persentase selesai”.

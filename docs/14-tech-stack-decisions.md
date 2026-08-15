@@ -17,6 +17,7 @@ Diverifikasi pada **6 Agustus 2026**. Setiap versi wajib diverifikasi ulang sebe
 | Framework backend | FastAPI 0.136.x + Pydantic 2.x | |
 | Simulasi agent | `camel-oasis` 0.2.5 | rilis terakhir 4 Des 2025 |
 | Model interface | `camel-ai` 0.2.78 | ditarik oleh oasis 0.2.5 |
+| Kompatibilitas MCP worker | `mcp` 1.29.0, constraint `<2` | MCP 2.0 menghapus lokasi import `FastMCP` yang masih dipakai CAMEL 0.2.78; diverifikasi lewat import probe 15 Agustus 2026 |
 | LLM | `gemini-3.1-flash-lite` | **berubah dari 2.5** — lihat risiko di bawah |
 | Structured output | LangChain (versi dipin saat spike) | di luar loop social interaction |
 | Database | PostgreSQL 16 + pgvector | |
