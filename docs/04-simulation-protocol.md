@@ -110,7 +110,7 @@ Orchestrator menggunakan `INTERVIEW` secara manual untuk memperoleh respons inde
 
 ### Round 1 — exposure
 
-Stimulus diposting melalui action manual. Persona aktif dapat mengomentari, like/dislike, purchase, atau tidak melakukan apa-apa. Activation subset dan urutan disimpan.
+Stimulus diposting melalui action manual. Persona aktif dapat mengomentari, like/dislike, purchase, atau tidak melakukan apa-apa. Activation subset, urutan, dan persona yang benar-benar melihat marker stimulus disimpan. Reaksi hanya dihitung dari exposure yang terverifikasi.
 
 ### Round 2 — interaction
 
@@ -136,7 +136,7 @@ Orchestrator meminta structured final ballot dan alasan singkat. Jawaban disimpa
 
 `FOLLOW`, `MUTE`, repost, dan action lain dikeluarkan bila tidak berkaitan dengan hipotesis. Action space kecil mengurangi noise dan token.
 
-Market, Finance, dan Report Council memakai custom action/tool allowlist:
+Market, Finance, dan Report Council memakai capability contract berikut. Nama di tabel menjelaskan mandat, bukan autonomous social action atau CAMEL tool yang selalu dipilih model:
 
 | Council | Actions/tools utama |
 |---|---|
@@ -144,7 +144,7 @@ Market, Finance, dan Report Council memakai custom action/tool allowlist:
 | Finance | `propose_assumption_set`, `run_finance_calculator`, `challenge_assumption`, `submit_scenario` |
 | Report | `load_artifact`, `draft_section`, `flag_unsupported_claim`, `revise_section`, `validate_report` |
 
-Action domain di atas diimplementasikan melalui custom tools/adapter pada `SocialAgent`; seluruh pemanggilan dan hasilnya tetap dicatat sebagai OASIS run trace atau application audit artifact dengan correlation ID yang sama.
+Pada MVP, deliberasi ketiga council dijalankan melalui manual `INTERVIEW`. Evidence adapter, deterministic finance calculator, artifact retrieval, citation validator, dan arithmetic validator dipanggil application orchestrator. Interaction agent dicatat di OASIS trace; hasil deterministic tool dicatat sebagai application audit artifact dengan correlation ID yang sama. Lihat [ADR-004](adr/ADR-004-orchestrator-owned-deterministic-tools.md).
 
 ## Output metrics
 

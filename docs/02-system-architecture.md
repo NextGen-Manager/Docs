@@ -73,7 +73,7 @@ Market Analyst, Customer Persona, dan Finance Council dapat memulai subtask yang
 
 ## AI framework boundary
 
-- **OASIS** mengelola empat agent type, personality instances, AgentGraph, environment, actions, interaction rounds, dan trace.
+- **OASIS** mengelola empat agent type, personality instances, AgentGraph, persona social environment, actions, structured interview, interaction rounds, dan trace.
 - **CAMEL-AI** menjadi model/tool interface yang dipakai OASIS agent untuk Gemini dan provider lain.
 - **LangChain** menangani structured-output parser, reusable prompt chain di luar social interaction loop, document loader/retrieval adapter, dan provider fallback workflow yang diperlukan application service.
 - **pgvector** berada pada PostgreSQL yang sama untuk embedding/index knowledge content; metadata, source, version, dan access scope tetap disimpan relational.
@@ -85,7 +85,7 @@ Market Analyst, Customer Persona, dan Finance Council dapat memulai subtask yang
 2. API membuat `analysis_run` berstatus `queued`, menyimpan snapshot input, lalu mengirim job.
 3. Worker membangun evidence snapshot. Setiap field memiliki source, observed-at, dan quality.
 4. OASIS adapter membentuk personality council untuk Market Analyst, Customer Persona, dan Finance Agent.
-5. Agent graph menjalankan analisis, simulasi konsumen, kritik silang, deterministic finance tool call, dan structured interview/ballot.
+5. Agent graph menjalankan structured deliberation dan simulasi konsumen; application orchestrator selalu menjalankan deterministic finance tool lalu memberikan hasilnya kepada Finance Council.
 6. Extractor mengubah trace menjadi typed artifacts; raw prose bukan input langsung score.
 7. Finance tool dan scoring engine menghitung hasil berdasarkan versioned rules.
 8. OASIS Report Council menyusun, mengkritik, dan merevisi narasi hanya dari artifact terstruktur.

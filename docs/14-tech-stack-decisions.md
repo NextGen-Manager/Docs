@@ -58,7 +58,13 @@ Karena jadwal GEMASTIK berpotensi melewati Oktober 2026, memin ke 2.5 berarti me
 
 **Keputusan:** pakai `gemini-3.1-flash-lite` sebagai model default — stabil, runway panjang, biaya mirip flash-lite generasi sebelumnya. Model preview (`-preview` pada namanya) **dilarang** untuk jalur demo karena dapat berubah tanpa pemberitahuan.
 
-Routing model per council:
+Model aktif MVP:
+
+| Council | Model | Alasan |
+|---|---|---|
+| Seluruh council | `gemini-3.1-flash-lite` | satu model ID dapat direkam utuh pada manifest sekarang, biaya lebih terkendali, dan belum ada benchmark live yang membenarkan routing berbeda |
+
+Routing berikut adalah kandidat setelah benchmark, bukan kemampuan yang sudah aktif:
 
 | Council | Model | Alasan |
 |---|---|---|
@@ -67,7 +73,7 @@ Routing model per council:
 | Finance | `gemini-3.1-flash-lite` | tidak menghitung, hanya mengkritik |
 | Report | model kelas pro | sintesis panjang, paling sensitif pada kualitas |
 
-Simpan `model_id` persis pada run manifest. Alias provider dapat berpindah diam-diam; tanpa pencatatan, perbandingan antar-run kehilangan makna.
+Routing hanya boleh diaktifkan setelah manifest dapat mencatat model per role dan benchmark menunjukkan manfaat yang sepadan dengan biaya. Simpan `model_id` persis pada run manifest. Alias provider dapat berpindah diam-diam; tanpa pencatatan, perbandingan antar-run kehilangan makna.
 
 ## Keputusan lain
 

@@ -38,10 +38,10 @@ Contoh archetype awal—harus dikalibrasi melalui wawancara:
 
 | Archetype | Variasi personality/need state |
 |---|---|
-| Budget-driven | mahasiswa hemat, pekerja entry-level, pemburu promo |
-| Convenience-driven | komuter terburu-buru, delivery-first, pekerja shift |
-| Quality-driven | pencari rasa, health-conscious, ingredient-sensitive |
-| Social/family-driven | pembeli keluarga, group eater, trend/social-proof seeker |
+| Budget-driven | memprioritaskan keterjangkauan, kejelasan porsi, dan nilai yang diterima |
+| Convenience-driven | memprioritaskan kecepatan layanan, kemudahan akses, dan kanal pemesanan |
+| Quality-driven | memprioritaskan kualitas produk, konsistensi, dan proposisi nilai |
+| Social/family-driven | memprioritaskan kecocokan untuk makan bersama dan kebutuhan kelompok |
 
 Setiap archetype memiliki beberapa instance dengan kombinasi budget, occasion, channel preference, price sensitivity, novelty seeking, dan evidence-backed location context. Jangan menyamakan demografi dengan perilaku atau membuat stereotype etnis/agama.
 
@@ -57,7 +57,7 @@ Tujuan: stress-test asumsi, bukan menghitung dengan bahasa natural.
 | Base | Menggunakan asumsi tengah yang eksplisit |
 | Optimistic | Memilih bound biaya rendah/volume tinggi yang masih masuk akal |
 
-Ketiganya memanggil fungsi finance yang sama. Output numerik harus dapat direproduksi tanpa LLM; Finance Agent menggunakan LLM untuk mengkritik trade-off, membandingkan skenario, dan menandai asumsi rapuh tanpa mengubah hasil calculator.
+Orchestrator selalu memanggil fungsi finance yang sama untuk bound minimum, dasar, dan maksimum sebelum council berjalan. Output numerik dapat direproduksi tanpa LLM; Finance Agent menggunakan LLM untuk mengkritik trade-off, membandingkan skenario, dan menandai asumsi rapuh tanpa mengubah hasil calculator. Boundary ini ditetapkan di [ADR-004](adr/ADR-004-orchestrator-owned-deterministic-tools.md).
 
 ### Report Council
 
@@ -73,16 +73,16 @@ Report council berjalan sekuensial. Hanya output yang lolos validator menjadi re
 
 ## Implementasi seluruh agent di atas OASIS
 
-Keempat role adalah agent inti berbasis OASIS. Arsitektur tetap memakai deterministic tools untuk operasi yang harus presisi; penggunaan tool tidak mengurangi statusnya sebagai OASIS agent, melainkan membatasi sumber angka dan action yang boleh dilakukan.
+Keempat role adalah agent inti berbasis OASIS. Customer Persona memakai social environment dan action loop penuh. Market, Finance, dan Report tetap `SocialAgent` di `AgentGraph`, tetapi melakukan structured deliberation melalui manual `INTERVIEW` dan typed artifact handoff. Deterministic tool dimiliki application orchestrator agar pelaksanaannya tidak bergantung pada keputusan model.
 
-| OASIS agent type | Personality instances | OASIS interaction | Tool yang dipanggil |
+| OASIS agent type | Personality instances | OASIS interaction | Data/tool boundary |
 |---|---|---|---|
-| Market Analyst | Opportunity Scout, Competition Skeptic, Evidence Auditor | Post assessment, challenge evidence, revise conclusion | Geospatial query, competitor aggregation, evidence lookup |
-| Customer Persona | Budget, convenience, quality, social/family variants | Observe, comment, like/dislike, purchase, interview | Product/context lookup |
-| Finance | Conservative, Base, Optimistic, Assumption Auditor | Propose scenario, challenge assumption, compare output | Deterministic finance calculator |
-| Report | Synthesizer, Red-team Reviewer, Evidence Editor | Draft, critique, revision, consensus | Artifact retrieval, citation validator, arithmetic validator |
+| Market Analyst | Opportunity Scout, Competition Skeptic, Evidence Auditor | Sequential assessment, challenge, revision melalui `INTERVIEW` | Evidence snapshot disiapkan adapter dan hanya metric yang tersedia boleh dirujuk |
+| Customer Persona | Budget, convenience, quality, social/family variants | Observe, comment, like/dislike, purchase, interview | Concept card dan context yang sudah disanitasi |
+| Finance | Conservative, Base, Optimistic, Assumption Auditor | Sequential critique dan comparison melalui `INTERVIEW` | Tiga hasil deterministic calculator wajib disiapkan orchestrator |
+| Report | Synthesizer, Red-team Reviewer, Evidence Editor | Sequential draft, red-team, revision melalui `INTERVIEW` | Typed artifact diberikan orchestrator; validator berjalan setelah output |
 
-Semua instance dibuat sebagai `SocialAgent` atau adapter subclass yang tetap berada dalam `AgentGraph`, menggunakan custom `UserInfo`, prompt template, model configuration, dan action/tool allowlist. Hasil interaction setiap council disimpan di trace OASIS dan direduksi menjadi typed artifact.
+Semua instance dibuat sebagai `SocialAgent` atau adapter subclass yang tetap berada dalam `AgentGraph`, menggunakan custom profile, prompt template, model configuration, dan action allowlist. OASIS trace menyimpan social action dan interview. Pemanggilan deterministic engine disimpan sebagai application audit artifact dengan correlation ID yang sama.
 
 ## Topologi agent graph
 

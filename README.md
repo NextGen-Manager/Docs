@@ -31,6 +31,7 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 17. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
 18. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
 19. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
+20. [ADR-004: deterministic tools dimiliki orchestrator](docs/adr/ADR-004-orchestrator-owned-deterministic-tools.md)
 
 ## Serah terima antarsesi
 

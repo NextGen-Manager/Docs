@@ -1,6 +1,6 @@
 # ADR-001: Empat Agent OASIS dengan Deterministic Tool Boundary
 
-- Status: Accepted untuk spike/MVP baseline
+- Status: Accepted untuk empat-agent baseline; detail pemanggilan deterministic tool disempurnakan oleh ADR-004
 - Tanggal: 2026-08-05
 - Owners: Tim SimuMarket AI
 
