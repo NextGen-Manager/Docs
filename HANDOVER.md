@@ -2,7 +2,7 @@
 
 Catatan keadaan proyek untuk serah terima antarsesi. Diperbarui setiap sesi berakhir.
 
-**Terakhir diperbarui:** 15 Agustus 2026
+**Terakhir diperbarui:** 16 Agustus 2026
 
 ---
 
@@ -18,9 +18,9 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
-| `Docs` | `main` | `4b72c11` | pembaruan handover, roadmap, dan kontrak SSE belum di-commit |
-| `SimuMarketAI` (frontend) | `feat/phase4-oasis-orchestration` | `9568d88` | hardening SSE dan test fallback belum di-commit |
-| `SimuMarketAI-BE` | `feat/phase4-oasis-orchestration` | `4bdbf0e` | penyelesaian council runtime, recovery, migrasi `0008`, dan test belum di-commit |
+| `Docs` | `main` | `8201770` | pembaruan roadmap dan handover belum di-commit |
+| `SimuMarketAI` (frontend) | `feat/phase4-oasis-orchestration` | `678fdcf` | bersih; tidak terdampak hardening runtime |
+| `SimuMarketAI-BE` | `feat/phase4-oasis-orchestration` | `b050140` | bersih; tiga commit hardening lokal belum di-push |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -95,7 +95,7 @@ Verifikasi lokal 15 Agustus 2026: Ruff, format check, mypy, dan 110 test backend
 
 Spike OASIS ditempatkan terisolasi di `spikes/oasis` dengan environment dan lockfile sendiri karena `camel-oasis==0.2.5` mengunci `pytest-asyncio==0.23.6`, sedangkan dependency transitif `mcp` perlu dibatasi `<2` agar `camel-ai==0.2.78` dapat diimpor. Spike sudah memiliki empat profil agent, schema artifact dan ballot, trace unik, hard limit, metrik token dan durasi, serta finance integer-rupiah deterministik. Dependency probe dan lima test spike lulus. Run Gemini live dan benchmark berulang belum dijalankan karena `GEMINI_API_KEY` belum tersedia; Fase 0 belum memenuhi exit criteria sampai hasil nyata dicatat di `docs/14`.
 
-Implementasi Fase 4 tersedia di branch feature dan belum di-commit seluruhnya:
+Baseline implementasi Fase 4 sudah di-commit dan di-push pada branch `feat/phase4-oasis-orchestration`. Hardening live adapter tanggal 16 Agustus 2026 sudah di-commit lokal per fungsi dan menunggu push serta review:
 
 - `POST /v1/analyses` hanya menyimpan run `queued`, lalu Celery worker menjalankan state machine penuh. API, worker, dan Celery beat dipisah di Docker Compose.
 - Empat council berjalan melalui orchestrator yang sama untuk adapter fake dan live. Market melakukan deliberasi evidence, persona menjalankan baseline, exposure, interaction, intervention, dan final ballot, Finance memanggil calculator deterministik lebih dulu, lalu Report hanya menerima artifact upstream yang lolos validasi.
@@ -103,9 +103,15 @@ Implementasi Fase 4 tersedia di branch feature dan belum di-commit seluruhnya:
 - PostgreSQL menyimpan event, agent run, instance, artifact, trace metadata, model/prompt manifest, lease, dan attempt count melalui migrasi `0007` dan `0008`. Recovery memakai conditional transition dan fencing agar worker lama tidak dapat menimpa run baru atau menghapus report yang baru selesai.
 - Kegagalan OASIS menghasilkan report `partial` dengan bagian deterministik tetap tersedia. Schema, citation, numeric provenance, dan arithmetic validator menolak artifact yang menciptakan evidence atau angka baru.
 - Adapter live sudah type-checked dan binding `camel-oasis` 0.2.5 sudah diperiksa terhadap API package. Dua test live sengaja `skip` selama `GEMINI_API_KEY` kosong; hasil schema, latency, token, dan stabilitas provider nyata belum boleh diklaim.
+- Behavioral profile persona sekarang berbeda untuk empat archetype tanpa mengarang demografi. Profile dan prompt dinaikkan ke versi `v2`.
+- Social action yang dipanggil langsung untuk menjaga observability sekarang memakai semaphore adapter, sehingga concurrency limit tidak dilewati. Setiap round menyimpan persona yang benar-benar melihat marker stimulus; reaksi hanya dihitung dari exposure tersebut.
+- ADR-004 menetapkan deterministic calculator dan validator sebagai milik application orchestrator. Empat role tetap OASIS `SocialAgent`, tetapi autonomous LLM tool call tidak menjadi prasyarat keluarnya angka otoritatif.
+- `camel-oasis` 0.2.5 membuat `./log` pada saat import. Image worker sekarang menyiapkan `/app/log` writable khusus untuk user non-root tanpa membuka write access ke seluruh `/app`.
 - Import probe image worker menemukan `mcp==2.0.0` tidak kompatibel dengan CAMEL 0.2.78. Extra OASIS sekarang memin `mcp<2` dan lockfile menghasilkan 1.29.0. Image final berhasil mengimpor OASIS/CAMEL, memuat adapter live, serta mendaftarkan task `analysis.run` dan `analysis.recover`.
 - Worker dan Celery beat berhasil hidup sebagai user non-root `simumarket`, terhubung ke Redis, dan menjawab `celery inspect ping`. Beat menyimpan scheduler di `/tmp`, sedangkan trace memakai volume khusus.
+- Task Celery sinkron membuat event loop baru melalui `asyncio.run`; engine PostgreSQL dan client Redis sekarang selalu ditutup setelah setiap task agar koneksi dari loop lama tidak digunakan ulang.
 - Verifikasi final 15 Agustus 2026: backend Ruff, format check, dan mypy bersih; 207 test lulus dan dua test Gemini live skip secara eksplisit. Migrasi PostgreSQL kosong lulus `0001` sampai `0008`, `alembic check`, downgrade `0008` ke `0007`, lalu upgrade ulang. Frontend lint/typecheck bersih, 57 test dan tujuh E2E Chromium lulus, production build berhasil, serta audit production dependency melaporkan nol vulnerability.
+- Verifikasi hardening 16 Agustus 2026: Ruff, format check, dan mypy bersih; 213 test lulus dan dua test Gemini live tetap skip. Image worker dibangun ulang, OASIS berhasil di-import dari `/app` sebagai UID 10001, `/app/log` terverifikasi writable, adapter live dapat di-import, dan Celery worker menjawab `pong`. Tiga recovery task berurutan pada worker process yang sama juga lulus tanpa error lintas event loop.
 - Database dev lokal sempat memiliki schema `0008` dengan revision marker `0007` akibat file migrasi lama yang pernah diedit. Tipe kolom, nullability, default, dan indeks diperiksa satu per satu sebelum marker di-stamp ke `0008`; `alembic check` kemudian lulus tanpa perubahan schema atau data.
 
 ---
@@ -228,10 +234,11 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
 
-1. Saat Gemini API key tersedia, jalankan test live dan benchmark berulang. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
-2. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
-3. Setelah perubahan Fase 4 direview dan di-commit per fungsi, merge branch feature ke `dev` di kedua repository kode.
-4. Lanjutkan Fase 5: OCR review/confirm, export PDF async, private object storage, dan retention job. Scenario comparison tetap Should bila waktu tersedia.
+1. Review hasil hardening yang sudah lulus verifikasi container, lalu push tiga commit backend pada branch Phase 4.
+2. Saat Gemini API key tersedia, jalankan test live dan benchmark berulang. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
+3. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
+4. Setelah perubahan Fase 4 direview, merge branch feature ke `dev` di kedua repository kode.
+5. Lanjutkan Fase 5: OCR review/confirm, export PDF async, private object storage, dan retention job. Scenario comparison tetap Should bila waktu tersedia.
 
 ---
 
