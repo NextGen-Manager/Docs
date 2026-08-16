@@ -1,11 +1,11 @@
 ---
 title: Ringkasan API
-description: Convention transport, authentication, idempotency, async job, dan error SimuMarket AI API.
+description: Konvensi transport, autentikasi, idempotensi, pemrosesan asinkron, dan penanganan error API SimuMarket AI.
 ---
 
 API HTTP SimuMarket AI menggunakan prefix `/v1`. Skema OpenAPI yang diekspor dari FastAPI menjadi sumber referensi endpoint dan schema di website ini. Base URL bergantung pada environment deployment.
 
-## Convention
+## Konvensi API
 
 | Area | Bentuk |
 |---|---|
@@ -19,21 +19,21 @@ API HTTP SimuMarket AI menggunakan prefix `/v1`. Skema OpenAPI yang diekspor dar
 
 Browser harus mengirim credential cookie pada request lintas origin. Token tidak disimpan di `localStorage`. Refresh token dirotasi setelah refresh berhasil dan versi lama tidak dapat digunakan kembali.
 
-## Business scope dan RBAC
+## Ruang lingkup usaha dan RBAC
 
 Role melekat pada membership user dan usaha, bukan pada user secara global. `owner` mengelola profil usaha, produk, anggota, analysis, dan report. `cashier` hanya dapat mencatat transaksi pada usaha tempatnya menjadi anggota. Resource dari tenant lain dikembalikan sebagai `404` agar keberadaannya tidak bocor.
 
 Endpoint yang bekerja dalam konteks usaha menerima `business_id` melalui query atau body sesuai schema. Seluruh endpoint receipt import memakai query `business_id` pada setiap langkah, termasuk create, complete upload, read, edit draft, dan confirm.
 
-## Pekerjaan async
+## Pemrosesan asinkron
 
 Analysis, OCR, dan export tidak harus selesai pada request awal. Create endpoint mengembalikan `202 Accepted` atau resource berstatus antre. Client membaca status resource sampai terminal. Analysis juga menyediakan Server-Sent Events.
 
-Untuk SSE, simpan `event_id` terakhir dan kirim sebagai `Last-Event-ID` ketika menyambung kembali. Event disimpan ke PostgreSQL sebelum dipublikasikan; polling status tetap menjadi fallback otoritatif ketika stream terputus.
+Untuk SSE, simpan `event_id` terakhir dan kirim sebagai `Last-Event-ID` ketika menyambung kembali. Event disimpan ke PostgreSQL sebelum dipublikasikan. Jika stream terputus, status resource menjadi rujukan utama.
 
-## Error dan partial result
+## Error dan hasil parsial
 
-Error mempunyai machine-readable code, pesan aman, detail field bila relevan, dan correlation ID. Jangan menampilkan trace internal kepada pengguna. `409 EDUCATION_PREREQUISITE_NOT_MET` menyatakan modul wajib belum selesai, bukan kegagalan server.
+Setiap respons error memuat kode yang dapat dibaca mesin, pesan aman, detail field bila relevan, dan correlation ID. Trace internal tidak ditampilkan kepada pengguna. `409 EDUCATION_PREREQUISITE_NOT_MET` menyatakan modul wajib belum selesai, bukan kegagalan server.
 
 Status `partial` adalah output yang sah ketika sebagian evidence atau provider tidak tersedia. Client harus menampilkan warning dan limitation dari server, tanpa mengisi nilai yang hilang atau mengubahnya menjadi sukses.
 

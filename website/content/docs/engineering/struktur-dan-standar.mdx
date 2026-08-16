@@ -1,6 +1,6 @@
 ---
 title: Struktur kode dan standar
-description: Batas repository, dependency direction, convention, dan quality gate SimuMarket AI.
+description: Struktur repository, hubungan antarkomponen, standar teknis, dan pemeriksaan kualitas SimuMarket AI.
 ---
 
 SimuMarket AI dipisahkan menjadi tiga repository. `Docs` adalah sumber kebenaran produk dan arsitektur, `SimuMarketAI` berisi aplikasi Next.js, sedangkan `SimuMarketAI-BE` berisi FastAPI, worker, engine deterministik, dan integrasi eksternal. Tidak ada import lintas repository.
@@ -23,7 +23,7 @@ Backend memakai dependency direction `api -> services -> domain/repositories/int
 
 Integrasi eksternal dibungkus adapter. Repository menangani persistence dan tenant scope. Service mengorkestrasi use case, transaction boundary, idempotency, serta state transition. Worker menjalankan pekerjaan async yang dapat dipulihkan tanpa menjadikan Redis sebagai system of record.
 
-## Convention penting
+## Standar teknis
 
 | Area | Aturan |
 |---|---|
@@ -36,7 +36,7 @@ Integrasi eksternal dibungkus adapter. Repository menangani persistence dan tena
 | Agent output | Structured artifact tervalidasi, bukan free-form authority |
 | Evidence | Nilai, unit, geography, sumber, waktu, quality, limitation |
 
-## Quality gate
+## Pemeriksaan kualitas
 
 Frontend harus lolos lint, typecheck, unit test, end-to-end test, build, dan production dependency audit. Backend harus lolos Ruff, MyPy, Pytest, pemeriksaan migration Alembic, serta migration round-trip pada PostgreSQL.
 

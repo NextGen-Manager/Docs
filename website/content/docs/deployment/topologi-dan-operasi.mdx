@@ -1,6 +1,6 @@
 ---
 title: Topologi dan operasi
-description: Deployment website dokumentasi, frontend, API, worker, storage, dan pemeriksaan operasional.
+description: Arsitektur deployment untuk website dokumentasi, frontend, API, worker, dan penyimpanan data.
 ---
 
 Website dokumentasi dan frontend dapat dibangun sebagai dua proyek Vercel terpisah. Backend bukan satu fungsi stateless: API, Celery worker, Celery beat, PostgreSQL, Redis, private object storage, dan volume trace mempunyai lifecycle serta kebutuhan operasional yang berbeda.
@@ -37,20 +37,20 @@ Internet
 
 API dan worker harus memakai revision aplikasi yang sama. Migration dijalankan satu kali sebelum traffic memakai schema baru. Worker analysis dan artifact menggunakan queue terpisah agar OCR atau PDF tidak menahan request API.
 
-## Secret dan data privat
+## Kredensial dan data privat
 
 - Simpan JWT secret, provider key, dan object-storage credential di secret manager platform.
 - Jangan menaruh secret pada variable `NEXT_PUBLIC_*`, repository, image, log, atau dokumentasi.
 - Bucket receipt dan export bersifat privat; akses browser hanya melalui signed URL berumur pendek.
 - OASIS trace dan foto struk mempunyai retention job serta tidak boleh ikut backup publik.
 
-## Health dan observability
+## Pemantauan sistem
 
 `GET /v1/health` memeriksa proses API. `GET /v1/ready` dipakai readiness check untuk dependency penting. Pantau queue depth, umur job tertua, lease recovery, failure code, OCR latency, provider usage, dan penghapusan retention.
 
 Correlation ID mengikuti request, event, task, dan log. Log tidak memuat cookie, raw receipt text, free-form user note, signed URL lengkap, atau prompt payload sensitif.
 
-## Pemeriksaan setelah deploy
+## Pemeriksaan setelah deployment
 
 1. Buka dokumentasi pada kedua locale dan uji language switch.
 2. Uji register, login, refresh, dan logout dengan cookie production.

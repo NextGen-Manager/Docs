@@ -1,6 +1,6 @@
 ---
 title: Arsitektur sistem
-description: Komponen, bounded context, state, storage, dan reliability SimuMarket AI.
+description: Komponen, alur pemrosesan, penyimpanan data, dan ketahanan sistem SimuMarket AI.
 ---
 
 ```text
@@ -25,13 +25,13 @@ Browser Next.js
 | Object storage | Foto struk dan PDF privat dengan signed URL |
 | OASIS trace | Artifact per attempt yang terisolasi dan mempunyai retention |
 
-## Analysis pipeline
+## Alur analisis
 
 `POST /v1/analyses` memvalidasi input, menyimpan run `queued`, commit, lalu mengirim task. Worker mengeksekusi stage secara berurutan. State dipersist sebelum event diterbitkan. Recovery lease mencegah task yang masih hidup diambil worker lain terlalu awal.
 
 Setiap run menyimpan immutable input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, dan artifact agent.
 
-## Reliability
+## Ketahanan sistem
 
 - Idempotency mencegah transaksi, run, dan export ganda.
 - Resource tenant lain terlihat sebagai `404`.
@@ -40,4 +40,3 @@ Setiap run menyimpan immutable input snapshot, evidence snapshot, correlation ID
 - Failure code aman dipisahkan dari trace internal.
 - Signed URL berumur pendek dan object tetap privat.
 - Retention job menghapus artifact tanpa menyamarkan kegagalan penghapusan.
-

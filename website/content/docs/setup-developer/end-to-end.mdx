@@ -1,6 +1,6 @@
 ---
-title: Menjalankan sistem end-to-end
-description: Setup backend, worker, frontend, dan website dokumentasi pada environment lokal.
+title: Menjalankan sistem secara lokal
+description: Panduan menyiapkan backend, worker, frontend, dan website dokumentasi pada komputer pengembang.
 ---
 
 ## Prasyarat
@@ -12,7 +12,7 @@ description: Setup backend, worker, frontend, dan website dokumentasi pada envir
 
 Python 3.12 atau lebih baru tidak digunakan karena `camel-oasis 0.2.5` membatasi runtime ke Python di bawah 3.12.
 
-## Clone repository
+## Mengkloning repository
 
 ```bash
 git clone https://github.com/NextGen-Manager/SimuMarketAI.git
@@ -22,7 +22,7 @@ git clone https://github.com/NextGen-Manager/Docs.git
 
 Gunakan branch yang kompatibel pada setiap repository. Jangan mencampur frontend dan backend dari kontrak yang berbeda.
 
-## Backend lengkap melalui Docker
+## Menjalankan backend dengan Docker
 
 ```bash
 cd SimuMarketAI-BE
@@ -60,7 +60,7 @@ npm run dev -- --port 3001
 
 Dokumentasi tersedia pada `http://localhost:3001`.
 
-## Quality checks
+## Pemeriksaan kualitas
 
 Backend:
 
@@ -90,7 +90,7 @@ npm run types:check
 npm run build
 ```
 
-## Menghentikan service
+## Menghentikan layanan
 
 ```bash
 docker compose down

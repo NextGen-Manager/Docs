@@ -3,13 +3,13 @@ title: Evidence, finance, and scoring
 description: Provenance, money formulas, the Launch Readiness Score, and confidence.
 ---
 
-## Evidence first
+## Data and sources
 
 Every market number requires a metric, value, unit, geography, source, observation time, retrieval time, quality, and limitations. Missing evidence remains missing instead of being replaced by an LLM-generated value.
 
 If required evidence is unavailable, a run can finish as `partial`, with affected dimensions marked `not_scorable`.
 
-## Deterministic finance
+## Financial calculations
 
 ```text
 contribution_margin_per_unit = selling_price - variable_cost_per_unit
@@ -33,6 +33,6 @@ LRS = 0.20 * market_saturation
 
 The active rule set is `lrs-v0.2-unvalidated`. A dimension without evidence receives no default. The total score is withheld when a required dimension cannot be scored, preventing silent weight redistribution.
 
-## Separate confidence
+## Evidence confidence
 
 Evidence Confidence assesses source quality, freshness, geographic fit, sample sufficiency, and cross-source consistency. Confidence never secretly raises or lowers the readiness score. Both are displayed with missing evidence and limitations.

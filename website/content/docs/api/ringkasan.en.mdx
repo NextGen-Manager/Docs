@@ -19,17 +19,17 @@ The SimuMarket AI HTTP API uses the `/v1` prefix. An OpenAPI schema exported fro
 
 Browsers must send cookie credentials on cross-origin requests. Tokens are not stored in `localStorage`. A successful refresh rotates the refresh token and invalidates the previous version.
 
-## Business scope and RBAC
+## Business access and RBAC
 
 Roles belong to a user-business membership, not to a user globally. An `owner` manages the business profile, products, members, analyses, and reports. A `cashier` can only record transactions for a business where they hold membership. Resources from another tenant return `404` so their existence is not disclosed.
 
 Business-scoped endpoints accept `business_id` through query parameters or the request body as defined by their schema. Every receipt-import endpoint requires the `business_id` query parameter at each step, including create, upload completion, read, draft edit, and confirmation.
 
-## Asynchronous work
+## Asynchronous processing
 
 Analysis, OCR, and export do not have to finish during the initial request. A create endpoint returns `202 Accepted` or a queued resource. The client reads resource status until it becomes terminal. Analysis also provides Server-Sent Events.
 
-For SSE, retain the most recent `event_id` and send it as `Last-Event-ID` when reconnecting. Events are persisted to PostgreSQL before publication; status polling remains the authoritative fallback when the stream disconnects.
+For SSE, retain the most recent `event_id` and send it as `Last-Event-ID` when reconnecting. Events are persisted to PostgreSQL before publication. If the stream disconnects, the resource status becomes the primary reference.
 
 ## Errors and partial results
 

@@ -3,7 +3,7 @@ title: Status and limitations
 description: How to interpret implementation, demo content, unavailable integrations, and partial results.
 ---
 
-This documentation deliberately distinguishes prototypes, implementation, and production validation.
+This page distinguishes available features, demo content, and production validation.
 
 ## Available capabilities
 
@@ -14,17 +14,17 @@ This documentation deliberately distinguishes prototypes, implementation, and pr
 - Private receipt upload, preprocessing, PaddleOCR adapter, draft review, correction, and idempotent confirmation.
 - PDF reports and transaction summaries through a background worker and signed download URLs.
 
-## Not ready for a completed claim
+## Current limitations
 
 - The production market-evidence provider has not been selected. Production can produce missing evidence and a `partial` report.
 - Rule set `lrs-v0.2-unvalidated` uses 20/25/15/40 weights, but thresholds and model quality still require expert review and calibration.
 - PaddleOCR accuracy has not been evaluated on a representative pilot dataset of Indonesian MSME receipts.
 - Some integrations and screens still use seed data for demonstrations.
 
-## Understanding `partial`
+## What `partial` means
 
 `partial` means valid deterministic sections can still be shown while another component is unavailable. The failed section stays visible with a safe explanation. The system does not invent defaults, silently redistribute weights, or relabel the run as `completed`.
 
-## Simulation is not field research
+## Limits of simulation results
 
 Synthetic personas help test structured reactions to scenarios. They are not a statistical representation of everyone in Greater Jakarta and do not replace interviews, observations, or direct market evidence.

@@ -1,11 +1,11 @@
 ---
 title: Architecture decision summary
-description: Decisions that preserve framework, scoring, and OASIS boundary consistency.
+description: A summary of technical decisions for frameworks, scoring, and OASIS integration.
 ---
 
 Architecture Decision Records capture difficult-to-reverse decisions with their context and consequences. This summary explains active decisions without publishing internal working notes.
 
-## OASIS behind an adapter
+## OASIS integration
 
 `camel-oasis` runs only in the worker and cannot be imported by the API, domain, or deterministic engines. The adapter keeps a stagnant dependency, traces, providers, and retries outside authoritative calculations. When the OASIS runtime is unavailable, the run reports the limitation explicitly.
 
@@ -26,13 +26,13 @@ The active rule version is `lrs-v0.2-unvalidated` with these weights:
 
 Weights cannot change without an ADR, comparison fixtures, and product-owner or expert validation. Active thresholds remain `unvalidated`; that label must accompany relevant output.
 
-## The orchestrator owns deterministic tools
+## Responsibilities of agents and engines
 
 Finance and scoring are not unrestricted agent tools. The orchestrator calls deterministic engines from typed snapshots, while agents can only critique or explain the result. This boundary prevents the LLM provider from becoming the source of scores, BEP, margins, payback, or aggregates.
 
 The finance council can only request the same calculator within the user's scenario bounds. Volume requests outside the input range are clamped and recorded. The report agent cannot insert new numbers because validation accepts only numbers present in input, evidence, finance, or score snapshots.
 
-## When a new decision is required
+## Changes that require an ADR
 
 Create an ADR before changing a major framework, the OASIS-engine boundary, scoring weights or thresholds, an evidence or LLM provider, or an endpoint contract already consumed by the frontend.
 

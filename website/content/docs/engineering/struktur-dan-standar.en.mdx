@@ -23,7 +23,7 @@ The backend follows the dependency direction `api -> services -> domain/reposito
 
 External systems are wrapped by adapters. Repositories handle persistence and tenant scope. Services orchestrate use cases, transaction boundaries, idempotency, and state transitions. Workers execute recoverable asynchronous jobs without treating Redis as the system of record.
 
-## Important conventions
+## Technical standards
 
 | Area | Rule |
 |---|---|
@@ -36,7 +36,7 @@ External systems are wrapped by adapters. Repositories handle persistence and te
 | Agent output | Validated structured artifacts, never free-form authority |
 | Evidence | Value, unit, geography, source, time, quality, and limitations |
 
-## Quality gates
+## Quality checks
 
 The frontend must pass linting, type checking, unit tests, end-to-end tests, builds, and production dependency audits. The backend must pass Ruff, MyPy, Pytest, Alembic migration checks, and a PostgreSQL migration round trip.
 

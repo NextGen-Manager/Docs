@@ -17,7 +17,7 @@ A cashier works within one assigned store context. The role focuses on reading a
 
 The owner creates an eight-character, single-use code that remains valid for seven days. Only a hash is stored. The owner can inspect invitation status or revoke it without receiving the raw code again.
 
-## Enforcement
+## Access control
 
 Hiding a menu is not authorisation. The API and repositories validate membership and role for every tenant-scoped resource. Another business's resource returns `404` even when the UUID exists, preventing tenant enumeration.
 

@@ -1,9 +1,9 @@
 ---
 title: Status dan batasan
-description: Cara membaca implementasi, demo, unavailable integration, dan hasil parsial.
+description: Penjelasan tentang fitur yang tersedia, bagian demo, batasan integrasi, dan hasil parsial.
 ---
 
-Dokumentasi ini sengaja tidak menyamakan prototype, implementasi, dan validasi produksi.
+Halaman ini membedakan fitur yang tersedia, bagian demo, dan validasi produksi.
 
 ## Yang sudah tersedia
 
@@ -14,17 +14,17 @@ Dokumentasi ini sengaja tidak menyamakan prototype, implementasi, dan validasi p
 - Receipt upload privat, preprocessing, PaddleOCR adapter, review draft, koreksi, dan confirm idempotent.
 - PDF report dan transaction summary melalui background worker serta signed download URL.
 
-## Yang belum boleh diklaim selesai
+## Batasan saat ini
 
 - Provider evidence pasar produksi belum dipilih. Runtime produksi dapat menghasilkan missing evidence dan laporan `partial`.
 - Rule `lrs-v0.2-unvalidated` memakai bobot 20/25/15/40, tetapi threshold dan kualitas model masih membutuhkan expert review serta calibration.
 - Akurasi PaddleOCR pada dataset struk UMKM Indonesia belum melalui evaluasi pilot representatif.
 - Beberapa integrasi dan tampilan tetap menggunakan seed data untuk demo.
 
-## Memahami `partial`
+## Arti status `partial`
 
 `partial` berarti bagian deterministik yang valid masih dapat ditampilkan, tetapi komponen lain tidak tersedia. Bagian gagal tetap berada di laporan dengan alasan aman. Sistem tidak mengisi nilai default, mengalihkan bobot diam-diam, atau mengubah status menjadi `completed`.
 
-## Simulasi bukan survei lapangan
+## Batas penggunaan hasil simulasi
 
 Synthetic persona membantu menguji reaksi terhadap skenario secara terstruktur. Hasilnya bukan representasi statistik seluruh masyarakat Jabodetabek dan tidak menggantikan wawancara, observasi, atau evidence pasar langsung.

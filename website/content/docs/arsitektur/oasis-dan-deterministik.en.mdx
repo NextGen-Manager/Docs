@@ -1,11 +1,11 @@
 ---
-title: OASIS and the deterministic boundary
-description: How SimuMarket AI uses OASIS without giving authoritative numbers to an LLM.
+title: OASIS and deterministic engines
+description: How responsibilities are divided between OASIS, agents, and deterministic engines.
 ---
 
 OASIS is used as an agent-interaction environment, not as a general backend or calculator. The SimuMarket AI orchestrator builds structured context, creates councils, limits actions, runs rounds, stores traces, and validates artifacts.
 
-## Council authority
+## Council responsibilities
 
 | Council | Allowed | Not allowed |
 |---|---|---|
@@ -16,7 +16,7 @@ OASIS is used as an agent-interaction environment, not as a general backend or c
 
 Finance and scoring execute from typed inputs regardless of agent success. A council's requested volume is clamped to the user's input range. Narrative validation rejects numbers absent from valid input, evidence, finance, score, or simulation artifacts.
 
-## Privacy boundary
+## Data protection
 
 Only a structured `SimulationRequest` may leave for the provider. IDs are salted and hashed. Email addresses, phone numbers, and URLs in free text are redacted. Customer names, phone numbers, raw receipt text, and free-form notes never enter provider prompts.
 

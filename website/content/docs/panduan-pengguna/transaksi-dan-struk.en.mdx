@@ -31,13 +31,13 @@ The frontend is not the authoritative money calculator. A `client_reference` can
 
 OCR never creates a final transaction without human review. Idempotent confirmation returns the same transaction when repeated.
 
-## Analytics
+## Sales analytics
 
 Analytics becomes `available` only after transactions span seven distinct local dates. Before that, the status is `collecting` and aggregate lists remain empty. Products without minimum exposure are not selected as the bottom product.
 
 Every insight includes an observation window, the `Asia/Jakarta` timezone, a `rule_version`, and limitations. Low volume alone is not enough to recommend removing a product.
 
-## Exports
+## Report exports
 
 An owner can request an analysis-report PDF or transaction-summary PDF. The job runs asynchronously. Downloads use short-lived signed URLs, and artifacts follow the retention policy.
 

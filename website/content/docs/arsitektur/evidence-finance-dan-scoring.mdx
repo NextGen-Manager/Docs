@@ -1,15 +1,15 @@
 ---
-title: Evidence, finance, dan scoring
-description: Provenance, formula uang, Launch Readiness Score, dan confidence.
+title: Sumber data, keuangan, dan penilaian
+description: Asal data, rumus keuangan, Launch Readiness Score, dan tingkat keyakinan.
 ---
 
-## Evidence lebih dulu
+## Data dan sumber
 
 Setiap angka pasar membutuhkan metric, value, unit, geography, source, waktu observasi, waktu retrieval, quality, dan limitation. Missing evidence dinyatakan sebagai missing, bukan diganti angka dari LLM.
 
 Jika evidence yang diperlukan tidak tersedia, run dapat selesai `partial` dan dimension terkait menjadi `not_scorable`.
 
-## Finance deterministik
+## Perhitungan finansial
 
 ```text
 contribution_margin_per_unit = selling_price - variable_cost_per_unit
@@ -33,6 +33,6 @@ LRS = 0.20 * market_saturation
 
 Rule aktif adalah `lrs-v0.2-unvalidated`. Dimension tanpa evidence tidak menerima nilai default. Total score ditahan ketika dimension yang diwajibkan tidak dapat dinilai, sehingga bobot tidak dialihkan diam-diam.
 
-## Confidence terpisah
+## Tingkat keyakinan data
 
 Evidence Confidence menilai source quality, freshness, geographic fit, sample sufficiency, dan cross-source consistency. Confidence tidak menaikkan atau menurunkan score secara tersembunyi. Keduanya ditampilkan berdampingan dengan missing evidence serta limitation.

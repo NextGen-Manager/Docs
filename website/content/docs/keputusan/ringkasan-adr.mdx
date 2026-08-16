@@ -1,11 +1,11 @@
 ---
 title: Ringkasan keputusan arsitektur
-description: Keputusan yang menjaga konsistensi framework, scoring, dan boundary OASIS.
+description: Ringkasan keputusan teknis untuk framework, scoring, dan integrasi OASIS.
 ---
 
 Architecture Decision Record (ADR) mencatat keputusan yang sulit dibalik beserta konteks dan konsekuensinya. Ringkasan ini menjelaskan keputusan aktif tanpa menerbitkan catatan kerja internal.
 
-## OASIS di belakang adapter
+## Integrasi OASIS
 
 `camel-oasis` hanya hidup pada worker dan tidak boleh diimpor oleh API, domain, atau engine deterministik. Adapter menjaga dependency yang stagnan, trace, provider, dan retry tetap berada di luar perhitungan otoritatif. Bila runtime OASIS tidak tersedia, run melaporkan limitation secara eksplisit.
 
@@ -26,13 +26,13 @@ Rule version aktif adalah `lrs-v0.2-unvalidated` dengan bobot:
 
 Bobot tidak boleh diubah tanpa ADR, fixture pembanding, dan validasi product owner atau pakar. Threshold aktif masih berstatus `unvalidated`; label tersebut harus ikut tampil pada output yang relevan.
 
-## Orchestrator memiliki deterministic tools
+## Pembagian tugas agent dan engine
 
 Finance dan scoring bukan tool bebas milik agent. Orchestrator memanggil engine deterministik dari typed snapshot, lalu agent hanya dapat mengkritik atau menjelaskan hasilnya. Dengan boundary ini, provider LLM tidak pernah menjadi sumber skor, BEP, margin, payback, atau aggregate.
 
 Finance council hanya dapat meminta kalkulator yang sama dalam batas skenario pengguna. Permintaan volume di luar rentang input di-clamp dan dicatat. Report agent tidak dapat menyisipkan angka baru karena validator hanya menerima angka yang ada pada input, evidence, finance, atau score snapshot.
 
-## Kapan membuat keputusan baru
+## Perubahan yang memerlukan ADR
 
 Buat ADR sebelum mengganti major framework, mengubah boundary OASIS dan engine, mengubah bobot atau threshold scoring, mengganti evidence provider atau LLM provider, dan mengubah kontrak endpoint yang sudah digunakan frontend.
 

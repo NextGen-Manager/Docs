@@ -1,11 +1,11 @@
 ---
-title: OASIS dan deterministic boundary
-description: Cara SimuMarket AI memakai OASIS tanpa menyerahkan angka otoritatif kepada LLM.
+title: OASIS dan engine deterministik
+description: Pembagian tanggung jawab antara OASIS, agent, dan engine deterministik.
 ---
 
 OASIS dipakai sebagai environment interaksi agent, bukan sebagai backend umum atau kalkulator. Orchestrator SimuMarket AI membangun konteks terstruktur, membuat council, membatasi action, menjalankan round, menyimpan trace, dan memvalidasi artifact.
 
-## Council dan kewenangan
+## Peran setiap council
 
 | Council | Boleh dilakukan | Tidak boleh dilakukan |
 |---|---|---|
@@ -16,7 +16,7 @@ OASIS dipakai sebagai environment interaksi agent, bukan sebagai backend umum at
 
 Finance dan scoring berjalan dari typed input terlepas dari keberhasilan agent. Volume yang diminta council dibatasi pada rentang input pengguna. Narrative validator menolak angka yang tidak ada pada input, evidence, finance, score, atau simulation artifact yang sah.
 
-## Privacy boundary
+## Perlindungan data
 
 Hanya `SimulationRequest` terstruktur yang dapat keluar menuju provider. ID di-hash dengan salt. Email, telepon, dan URL pada free text direduksi. Nama pelanggan, nomor telepon, teks struk mentah, dan catatan bebas tidak pernah menjadi prompt provider.
 
