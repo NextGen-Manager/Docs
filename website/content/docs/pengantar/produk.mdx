@@ -1,13 +1,13 @@
 ---
 title: Mengenal SimuMarket AI
-description: Tahapan penggunaan, modul utama, dan cara SimuMarket AI membantu UMKM F&B.
+description: Tahapan penggunaan, modul utama, batas Decision Support System, dan cara SimuMarket AI membantu UMKM F&B.
 ---
 
-SimuMarket AI digunakan pada dua tahap usaha F&B.
+SimuMarket AI digunakan pada dua tahap usaha F&B di Jabodetabek.
 
 ## Sebelum usaha dibuka
 
-Calon pengusaha memasukkan konsep, lokasi target di Jabodetabek, harga, biaya, modal, kapasitas, dan perkiraan volume. Sistem menggabungkan evidence pasar yang tersedia, simulasi synthetic persona, perhitungan finansial deterministik, dan scoring versioned.
+Calon pengusaha memasukkan konsep, lokasi target, harga, biaya, modal, kapasitas, dan perkiraan volume. Sistem menggabungkan evidence pasar yang tersedia, simulasi synthetic persona, perhitungan finansial deterministik, dan scoring versioned.
 
 Pertanyaan yang dibantu adalah:
 
@@ -29,7 +29,7 @@ Pertanyaan yang dibantu adalah:
 | Market Analysis | Menghasilkan readiness report dengan evidence, finance, risiko, dan rekomendasi |
 | Transaction Management | Mengelola produk, transaksi, receipt review, analytics, dan export |
 
-Lifecycle produk diringkas sebagai `Learn -> Analyse -> Launch -> Record -> Understand -> Improve`.
+Lifecycle produk diringkas sebagai `Learn -> Analyse -> Launch -> Record -> Understand -> Improve`. Transaksi yang sudah dikonfirmasi menjadi bahan masukan yang lebih kuat untuk analisis berikutnya, sehingga produk tidak berhenti sebagai kalkulator sekali pakai.
 
 ## Empat council OASIS
 
@@ -38,5 +38,35 @@ Lifecycle produk diringkas sebagai `Learn -> Analyse -> Launch -> Record -> Unde
 - Finance mengkritik kelayakan finansial tetapi tidak menjadi kalkulator.
 - Report menyusun narasi dari artifact yang sudah divalidasi.
 
-Finance, scoring, dan agregasi transaksi tetap dihitung oleh kode deterministik di luar keputusan bebas LLM.
+Finance, scoring, dan agregasi transaksi tetap dihitung oleh kode deterministik di luar keputusan bebas LLM. Pembagian tugasnya dijelaskan pada [OASIS dan engine deterministik](/docs/arsitektur/oasis-dan-deterministik).
 
+## Batas sebagai Decision Support System
+
+Produk ini menyusun bahan keputusan. Ia tidak mengambil keputusan atas nama pengguna dan tidak memperkirakan hasil usaha di dunia nyata.
+
+Yang dijawab sistem:
+
+- besar biaya tetap yang harus tertutup pada asumsi harga dan volume tertentu;
+- titik impas dan payback pada tiga skenario asumsi yang eksplisit;
+- keberatan apa yang muncul dari persona berbeda terhadap konsep, harga, dan kanal;
+- evidence apa yang tersedia, seberapa segar, dan mana yang tidak tersedia;
+- risiko dan data apa yang paling perlu divalidasi sebelum modal dikeluarkan.
+
+Yang tidak dijawab sistem:
+
+- omzet pasti, jumlah pelanggan nyata, atau probabilitas usaha berhasil;
+- rekomendasi investasi, kredit, atau nasihat hukum;
+- pengganti survei lapangan, wawancara calon pelanggan, dan observasi lokasi;
+- penilaian mutlak "layak" atau "tidak layak" tanpa asumsi yang menyertainya.
+
+Setiap laporan memuat disclaimer yang sama pada layar maupun pada PDF: hasil adalah alat bantu keputusan, bukan jaminan keberhasilan usaha.
+
+## Siapa yang memakai
+
+| Pembaca | Jalur yang relevan |
+|---|---|
+| Calon pengusaha F&B | [Alur pengguna](/docs/panduan-pengguna/alur-pengguna) dan [Market Analysis](/docs/panduan-pengguna/analisis-pasar) |
+| Pemilik usaha berjalan | [Produk dan transaksi](/docs/panduan-pengguna/produk-dan-transaksi) |
+| Kasir | [Peran dan akses](/docs/panduan-pengguna/peran-dan-akses) |
+| Reviewer dan juri | [Arsitektur sistem](/docs/arsitektur/sistem) dan [Status dan batasan](/docs/pengantar/status-dan-batasan) |
+| Developer | [Menjalankan sistem secara lokal](/docs/setup-developer/end-to-end) |

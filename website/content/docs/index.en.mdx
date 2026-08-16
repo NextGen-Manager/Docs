@@ -10,25 +10,19 @@ SimuMarket AI is a Decision Support System for prospective and operating F&B MSM
 ## Choose your path
 
 <Cards>
-  <Card title="I want to use the product" description="Follow the Market Analysis, transaction, receipt, and report workflows." href="/en/docs/panduan-pengguna/analisis-pasar" />
+  <Card title="I want to use the product" description="Follow the user journey from education through reports and transactions." href="/en/docs/panduan-pengguna/alur-pengguna" />
   <Card title="I want to run the codebase" description="Set up all three repositories and local services." href="/en/docs/setup-developer/end-to-end" />
   <Card title="I want to understand the architecture" description="Review the OASIS boundary, deterministic engine, evidence, and workers." href="/en/docs/arsitektur/sistem" />
-  <Card title="I want to inspect the API" description="Learn the API v1 conventions and endpoints." href="/en/docs/api/ringkasan" />
+  <Card title="I want to inspect the API" description="Learn the conventions, state machine, and API v1 endpoints." href="/en/docs/api/ringkasan" />
+  <Card title="I am judging how honest the output is" description="Check the formulas, scoring weights, and what remains unvalidated." href="/en/docs/arsitektur/evidence-finance-dan-scoring" />
+  <Card title="I am reviewing security and privacy" description="See tenant isolation and the data boundary toward the LLM provider." href="/en/docs/arsitektur/keamanan-dan-privasi" />
 </Cards>
 
 ## Feature status
 
-The documentation distinguishes five states:
+Implementation status is recorded in one place, [Status and limitations](/en/docs/pengantar/status-dan-batasan): what is available, what is limited and how, what is still planned, and what runs but is not yet validated.
 
-| Label | Meaning |
-|---|---|
-| Implemented | Available in the product with relevant verification |
-| Demo | Uses seed data or an interactive prototype |
-| Planned | Designed but not yet available in the product |
-| Unavailable | An integration explicitly reports that it is unavailable |
-| Unvalidated | Operational, but its parameters or quality are not yet expert-validated |
-
-This documentation publishes only product capabilities, contracts, and limitations relevant to users and developers.
+Other pages do not repeat status markers. The user guide covers only features you can already use, the API reference contains only endpoints that genuinely exist, and designs for features not yet implemented live on [Target design](/en/docs/arsitektur/desain-target).
 
 ## Data and analysis results
 

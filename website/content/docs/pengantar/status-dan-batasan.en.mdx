@@ -1,30 +1,73 @@
 ---
 title: Status and limitations
-description: How to interpret implementation, demo content, unavailable integrations, and partial results.
+description: 'The single source of implementation status for SimuMarket AI: what is available, what is limited, what is planned, and what is unvalidated.'
 ---
 
-This page distinguishes available features, demo content, and production validation.
+This page is **the only place implementation status is recorded**. Other pages explain how things work and how they are designed without repeating status markers, so no two places can contradict each other when something changes.
 
-## Available capabilities
+| Status | Meaning |
+|---|---|
+| Available | In the product with verification |
+| Limited | Usable, subject to the restriction stated on that row |
+| Planned | The design is settled in the technical documents, not yet in the product |
+| Unvalidated | Operational, but its parameters or quality are not expert-validated |
 
-- Authentication, session rotation, multi-business membership, and owner/cashier roles.
-- Businesses, products, manual and batch transactions, dashboard, and transaction analytics.
-- Education and its prerequisite gate.
-- Asynchronous analysis pipeline, SSE, recovery leases, deterministic finance, scoring, and reporting.
-- Private receipt upload, preprocessing, PaddleOCR adapter, draft review, correction, and idempotent confirmation.
-- PDF reports and transaction summaries through a background worker and signed download URLs.
+## Available
 
-## Current limitations
+| Capability | Note |
+|---|---|
+| Authentication, session rotation, multi-business membership, owner and cashier roles | |
+| Businesses, products, manual and batch transactions | |
+| Dashboard and transaction analytics | Analytics unlocks once transactions span seven distinct local dates |
+| Education modules and the prerequisite gate | |
+| Asynchronous analysis pipeline, SSE, recovery lease | Snapshot polling is the fallback when SSE fails |
+| Deterministic finance, scoring, and report | |
+| Private receipt upload, preprocessing, draft review, corrections, idempotent confirmation | |
+| PDF analysis reports and transaction summaries | Through a background worker with signed download URLs |
 
-- The production market-evidence provider has not been selected. Production can produce missing evidence and a `partial` report.
-- Rule set `lrs-v0.2-unvalidated` uses 20/25/15/40 weights, but thresholds and model quality still require expert review and calibration.
-- PaddleOCR accuracy has not been evaluated on a representative pilot dataset of Indonesian MSME receipts.
-- Some integrations and screens still use seed data for demonstrations.
+## Limited
+
+| Capability | Restriction |
+|---|---|
+| Market evidence | No production provider has been selected. The runtime returns every metric as missing, so the related dimension cannot be scored and a report may finish `partial` |
+| OASIS simulation | Depends on the runtime and provider credentials in that deployment. When unavailable, the simulation section is reported unavailable and the run finishes `partial` |
+| Some product views | Still use seed data for demonstration and carry a demo-mode badge |
+
+## Planned
+
+The technical design of the five capabilities below is settled and documented on [Target design](/en/docs/arsitektur/desain-target), including components, data flow, system boundaries, and target contracts. What is missing is the implementation.
+
+| Capability | Design |
+|---|---|
+| Business plan extraction from an uploaded document | [Target design](/en/docs/arsitektur/desain-target) |
+| Side-by-side comparison of two analysis runs | [Target design](/en/docs/arsitektur/desain-target) |
+| Follow-up discussion with an agent after a report completes | [Target design](/en/docs/arsitektur/desain-target) |
+| Admin area and user feedback | [Target design](/en/docs/arsitektur/desain-target) |
+| User-triggered cancellation of an analysis run | [Target design](/en/docs/arsitektur/desain-target) |
+
+The user guide deliberately contains no usage steps for the capabilities above, because there is nothing to operate yet.
+
+## Unvalidated
+
+| Item | What has not been done |
+|---|---|
+| Weights and thresholds of `lrs-v0.2-unvalidated` | Weights were set by the product owner, not by expert review or calibration. The interpretation thresholds remain hypotheses |
+| OCR accuracy on Indonesian MSME receipts | No representative pilot evaluation has been run |
+| Synthetic persona output | Not calibrated against human responses, so all of its metrics are experimental |
+| Evidence Confidence label cutoffs | Still a draft and in need of testing |
 
 ## What `partial` means
 
-`partial` means valid deterministic sections can still be shown while another component is unavailable. The failed section stays visible with a safe explanation. The system does not invent defaults, silently redistribute weights, or relabel the run as `completed`.
+`partial` means the valid deterministic parts can still be shown while another component is unavailable. The failed part stays in the report with a safe reason and stays in the table of contents.
 
-## Limits of simulation results
+What the system does not do when a run is `partial`:
 
-Synthetic personas help test structured reactions to scenarios. They are not a statistical representation of everyone in Greater Jakarta and do not replace interviews, observations, or direct market evidence.
+- assign default values to the failed component;
+- shift the weight of an unscorable dimension onto other dimensions;
+- relabel the run as `completed` for a tidier presentation.
+
+The full explanation is in [Data sources, finance, and scoring](/en/docs/arsitektur/evidence-finance-dan-scoring).
+
+## Limits on simulation results
+
+Synthetic personas help test reactions to a scenario in a structured way. The output is not a statistical representation of the population of Greater Jakarta and does not replace interviews, observation, or direct market evidence. Every persona quote is labelled a synthetic response and never uses a real person's name.

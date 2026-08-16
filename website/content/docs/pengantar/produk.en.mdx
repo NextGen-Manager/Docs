@@ -1,42 +1,72 @@
 ---
-title: Introducing SimuMarket AI
-description: Product stages, core modules, and how SimuMarket AI supports F&B MSMEs.
+title: About SimuMarket AI
+description: Usage stages, core modules, the Decision Support System boundary, and how SimuMarket AI helps F&B MSMEs.
 ---
 
-SimuMarket AI supports F&B businesses before and after launch.
+SimuMarket AI is used at two stages of an F&B business in Greater Jakarta.
 
-## Before launch
+## Before the business opens
 
-A prospective owner provides a concept, a target location in Greater Jakarta, price, costs, capital, capacity, and expected volume. The system combines available market evidence, synthetic-persona simulation, deterministic financial calculations, and versioned scoring.
+A prospective owner enters the concept, target location, prices, costs, capital, capacity, and expected volume. The system combines the market evidence that is available, a synthetic persona simulation, deterministic financial calculation, and versioned scoring.
 
-It helps answer:
+The question it helps answer:
 
-> Is this F&B idea, at this price and location, reasonable to pursue, and which risks need mitigation?
+> Is this F&B idea, at that price and location, viable enough to pursue, and which risks must be mitigated?
 
-## After launch
+## After the business is running
 
-The owner configures a business and products. An owner or cashier can record sales. Once transactions cover seven distinct local dates in the `Asia/Jakarta` timezone, the system unlocks basic analytics such as daily sales, product performance, and rule-based insights.
+The owner sets up the business and its products. Owner or cashier records sales. Once transactions span seven distinct local dates in the `Asia/Jakarta` timezone, the system unlocks basic analytics such as daily sales, product performance, and rule-based insight.
 
-It helps answer:
+The question it helps answer:
 
-> What is selling, what has not received enough exposure, and which operational areas should be evaluated?
+> What is selling, what has not had enough exposure, and which operational aspects need review?
 
-## Three main modules
+## Three core modules
 
 | Module | Purpose |
 |---|---|
-| F&B Education | Explains licensing, pricing, inventory, and customer acquisition |
+| F&B education | Covers legal requirements, pricing, ingredients, and customer acquisition |
 | Market Analysis | Produces a readiness report with evidence, finance, risks, and recommendations |
 | Transaction Management | Manages products, transactions, receipt review, analytics, and exports |
 
-The product lifecycle is `Learn -> Analyse -> Launch -> Record -> Understand -> Improve`.
+The product lifecycle is `Learn -> Analyse -> Launch -> Record -> Understand -> Improve`. Confirmed transactions become stronger input for the next analysis, so the product does not stop at being a one-shot calculator.
 
-## Four OASIS councils
+## The four OASIS councils
 
 - Market Analyst assesses competitor evidence and market conditions.
-- Customer Persona runs synthetic-persona responses to a scenario.
-- Finance critiques financial feasibility but does not act as the calculator.
-- Report composes narrative from validated artifacts.
+- Customer Persona runs synthetic persona responses against a scenario.
+- Finance critiques financial viability but is not the calculator.
+- Report composes the narrative from validated artifacts.
 
-Finance, scoring, and transaction aggregates remain deterministic code responsibilities outside free-form LLM decisions.
+Finance, scoring, and transaction aggregation are always computed by deterministic code, outside any free LLM decision. The division of labour is described in [OASIS and the deterministic engine](/en/docs/arsitektur/oasis-dan-deterministik).
 
+## The Decision Support System boundary
+
+The product assembles material for a decision. It does not make the decision for the user and does not predict real-world business outcomes.
+
+What the system answers:
+
+- how much fixed cost must be covered at a given price and volume assumption;
+- break-even and payback across three explicit assumption scenarios;
+- which objections different personas raise about the concept, price, and channel;
+- which evidence exists, how fresh it is, and which parts are unavailable;
+- which risks and data points most need validation before capital is committed.
+
+What the system does not answer:
+
+- guaranteed revenue, real customer counts, or the probability of success;
+- investment advice, credit advice, or legal advice;
+- a replacement for field surveys, customer interviews, and location observation;
+- an absolute "viable" or "not viable" verdict detached from its assumptions.
+
+Every report carries the same disclaimer on screen and in the PDF: the result supports a decision and does not guarantee business success.
+
+## Who it is for
+
+| Reader | Relevant path |
+|---|---|
+| Prospective F&B owner | [User journeys](/en/docs/panduan-pengguna/alur-pengguna) and [Market Analysis](/en/docs/panduan-pengguna/analisis-pasar) |
+| Operating business owner | [Products and transactions](/en/docs/panduan-pengguna/produk-dan-transaksi) |
+| Cashier | [Roles and access](/en/docs/panduan-pengguna/peran-dan-akses) |
+| Reviewers and judges | [System architecture](/en/docs/arsitektur/sistem) and [Status and limitations](/en/docs/pengantar/status-dan-batasan) |
+| Developers | [Running the system locally](/en/docs/setup-developer/end-to-end) |

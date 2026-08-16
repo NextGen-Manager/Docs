@@ -1,30 +1,73 @@
 ---
 title: Status dan batasan
-description: Penjelasan tentang fitur yang tersedia, bagian demo, batasan integrasi, dan hasil parsial.
+description: 'Sumber tunggal status implementasi SimuMarket AI: yang tersedia, yang terbatas, yang masih planned, dan yang belum divalidasi.'
 ---
 
-Halaman ini membedakan fitur yang tersedia, bagian demo, dan validasi produksi.
+Halaman ini adalah **satu-satunya tempat status implementasi dicatat**. Halaman lain menjelaskan cara kerja dan rancangan tanpa mengulang penanda status, sehingga tidak ada dua tempat yang bisa saling bertentangan ketika sesuatu berubah.
 
-## Yang sudah tersedia
+| Status | Makna |
+|---|---|
+| Tersedia | Ada pada produk dan mempunyai verifikasi |
+| Terbatas | Dapat dipakai, tetapi dengan pembatasan yang disebutkan pada baris terkait |
+| Planned | Rancangannya sudah ditetapkan pada dokumen teknis, belum ada pada produk |
+| Belum divalidasi | Sudah berjalan, tetapi parameter atau kualitasnya belum tervalidasi pakar |
 
-- Authentication, session rotation, multi-business membership, dan role owner/cashier.
-- Usaha, produk, transaksi manual dan batch, dashboard, serta transaction analytics.
-- Edukasi dan prerequisite gate.
-- Analysis pipeline asynchronous, SSE, recovery lease, deterministic finance, scoring, dan report.
-- Receipt upload privat, preprocessing, PaddleOCR adapter, review draft, koreksi, dan confirm idempotent.
-- PDF report dan transaction summary melalui background worker serta signed download URL.
+## Tersedia
 
-## Batasan saat ini
+| Kemampuan | Catatan |
+|---|---|
+| Authentication, session rotation, multi-business membership, role owner dan cashier | |
+| Usaha, produk, transaksi manual dan batch | |
+| Dashboard dan transaction analytics | Analytics terbuka setelah transaksi mencakup tujuh tanggal lokal berbeda |
+| Edukasi dan prerequisite gate | |
+| Analysis pipeline asynchronous, SSE, recovery lease | Polling snapshot menjadi cadangan ketika SSE gagal |
+| Finance, scoring, dan report deterministik | |
+| Receipt upload privat, preprocessing, review draft, koreksi, dan confirm idempotent | |
+| PDF laporan analisis dan ringkasan transaksi | Melalui background worker dan signed download URL |
 
-- Provider evidence pasar produksi belum dipilih. Runtime produksi dapat menghasilkan missing evidence dan laporan `partial`.
-- Rule `lrs-v0.2-unvalidated` memakai bobot 20/25/15/40, tetapi threshold dan kualitas model masih membutuhkan expert review serta calibration.
-- Akurasi PaddleOCR pada dataset struk UMKM Indonesia belum melalui evaluasi pilot representatif.
-- Beberapa integrasi dan tampilan tetap menggunakan seed data untuk demo.
+## Terbatas
+
+| Kemampuan | Pembatasan |
+|---|---|
+| Evidence pasar | Provider produksi belum dipilih. Runtime mengembalikan seluruh metric sebagai missing, sehingga dimension terkait tidak dapat dinilai dan laporan dapat selesai `partial` |
+| Simulasi OASIS | Bergantung pada runtime dan kredensial provider pada deployment. Ketika tidak tersedia, bagian simulasi dinyatakan tidak tersedia dan run selesai `partial` |
+| Beberapa tampilan produk | Masih memakai seed data untuk keperluan demonstrasi dan diberi penanda mode demo |
+
+## Planned
+
+Rancangan teknis keempat kemampuan berikut sudah ditetapkan dan didokumentasikan pada [Desain target](/docs/arsitektur/desain-target), termasuk komponen, aliran data, batas sistem, dan target contract-nya. Yang belum ada adalah implementasinya.
+
+| Kemampuan | Rancangan |
+|---|---|
+| Ekstraksi rencana usaha dari dokumen unggahan | [Desain target](/docs/arsitektur/desain-target) |
+| Perbandingan dua run analisis berdampingan | [Desain target](/docs/arsitektur/desain-target) |
+| Diskusi lanjutan dengan agent setelah laporan selesai | [Desain target](/docs/arsitektur/desain-target) |
+| Area admin dan feedback pengguna | [Desain target](/docs/arsitektur/desain-target) |
+| Pembatalan run analysis oleh pengguna | [Desain target](/docs/arsitektur/desain-target) |
+
+Panduan pengguna sengaja tidak memuat langkah pemakaian untuk kemampuan di atas, karena belum ada yang dapat dijalankan.
+
+## Belum divalidasi
+
+| Hal | Yang belum dilakukan |
+|---|---|
+| Bobot dan threshold `lrs-v0.2-unvalidated` | Bobot ditetapkan product owner, bukan hasil expert review atau calibration. Threshold interpretasi masih hipotesis |
+| Akurasi OCR pada struk UMKM Indonesia | Belum melalui evaluasi pilot yang representatif |
+| Hasil synthetic persona | Belum dikalibrasi terhadap respons manusia, sehingga seluruh metriknya bersifat eksperimental |
+| Cutoff label Evidence Confidence | Masih draft dan perlu diuji |
 
 ## Arti status `partial`
 
-`partial` berarti bagian deterministik yang valid masih dapat ditampilkan, tetapi komponen lain tidak tersedia. Bagian gagal tetap berada di laporan dengan alasan aman. Sistem tidak mengisi nilai default, mengalihkan bobot diam-diam, atau mengubah status menjadi `completed`.
+`partial` berarti bagian deterministik yang valid masih dapat ditampilkan, tetapi komponen lain tidak tersedia. Bagian yang gagal tetap berada di laporan dengan alasan aman dan tetap muncul pada daftar isi.
+
+Yang tidak dilakukan sistem ketika `partial`:
+
+- mengisi nilai default untuk komponen yang gagal;
+- mengalihkan bobot dimension yang tidak dapat dinilai ke dimension lain;
+- mengubah status menjadi `completed` agar tampilan lebih rapi.
+
+Penjelasan lengkap ada pada [Sumber data, keuangan, dan penilaian](/docs/arsitektur/evidence-finance-dan-scoring).
 
 ## Batas penggunaan hasil simulasi
 
-Synthetic persona membantu menguji reaksi terhadap skenario secara terstruktur. Hasilnya bukan representasi statistik seluruh masyarakat Jabodetabek dan tidak menggantikan wawancara, observasi, atau evidence pasar langsung.
+Synthetic persona membantu menguji reaksi terhadap skenario secara terstruktur. Hasilnya bukan representasi statistik seluruh masyarakat Jabodetabek dan tidak menggantikan wawancara, observasi, atau evidence pasar langsung. Setiap kutipan persona diberi label respons sintetis dan tidak pernah memakai nama orang nyata.
