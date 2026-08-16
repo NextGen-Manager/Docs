@@ -1,0 +1,107 @@
+---
+title: Contribution workflow
+description: What to do before writing code, commit rules, changes that require an ADR, and the checks required before calling work done.
+---
+
+The documents in the `Docs` repository win over the code. When an implementation diverges from a document, the implementation is what gets fixed, unless an ADR says otherwise.
+
+## Five rules that must not be broken
+
+These rules apply in all three repositories. Breaking one invalidates a core product claim, not just a style guideline.
+
+1. The LLM is never the source of authoritative numbers. Scores, break-even, margins, payback, and all aggregates are computed by deterministic code.
+2. Every displayed number has provenance: value, unit, source, retrieval time, and confidence.
+3. Partial failure is not disguised. A `partial` status stays `partial`, and a failed component is never given a default value.
+4. Money is integer rupiah. There is no `float` on the money path, in any language.
+5. User data does not leak into prompts. Customer names, phone numbers, raw receipt text, and free-form notes are never sent to the LLM provider.
+
+If a task appears to require breaking one of them, stop and ask first.
+
+## Before writing code
+
+1. Read the source document relevant to the change instead of relying on memory of a formula or a contract.
+2. Check whether the change touches a requirement, the API contract, or scoring weights.
+3. If it is a hard-to-reverse decision, write the ADR first.
+4. Confirm the change does not cross a repository boundary.
+
+## Changes that require an ADR
+
+Write an ADR **before** the work starts for:
+
+- replacing or upgrading a major framework version;
+- changing the boundary between OASIS and deterministic code;
+- changing scoring weights or thresholds;
+- changing the data provider or the LLM provider;
+- changing the shape of an endpoint the frontend already uses.
+
+An ADR records context, the decision, positive and negative consequences, rejected alternatives with reasons, how it will be validated, and references. The rejected alternatives section is what makes an ADR useful six months later.
+
+ADRs are never deleted. An obsolete decision is marked superseded and points to its replacement.
+
+## Commits and branches
+
+- One commit per logical change.
+- Commit messages are written in English.
+- A change that touches a requirement updates the document, contract, and tests in the same commit.
+- Never commit `.env`, API keys, database dumps, OASIS traces, user PDFs, or receipt photos.
+
+## Contract changes
+
+Contracts change from the document into the code, never the other way around.
+
+1. Update the contract document in `Docs`.
+2. Change the backend schema and its contract tests.
+3. Re-export the OpenAPI snapshot, then regenerate the endpoint reference on the documentation site.
+4. Update the Zod contracts in the frontend and the tests that use them.
+5. Update the public documentation pages that summarise the contract, in both languages.
+
+## Writing public documentation
+
+- Every Indonesian page must have an English counterpart with an equivalent structure.
+- Both locales must convey the same meaning, numbers, limitations, and validation status.
+- Distinguish what exists from what is still a target. Never write a target as a finished feature.
+- Do not claim the scoring is expert-validated while that validation has not happened.
+- Example payloads, transactions, receipts, and reports use synthetic data only.
+- Internal delivery and progress tracking notes stay in the repository and out of public navigation.
+
+## Before calling work done
+
+Backend:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app
+uv run pytest
+uv run alembic check
+```
+
+Frontend:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:e2e
+npm run build
+```
+
+Documentation site:
+
+```bash
+npm run lint
+npm run types:check
+npm run docs:validate
+npm run build
+```
+
+Report the results as they are. If a test fails, say so and include the output. If part of the work is blocked, finish the rest and state which part was left out and why.
+
+## What not to do
+
+- Remove the decision support disclaimer, the Evidence Confidence section, or the evidence and limitations section for a cleaner layout.
+- Remove the synthetic response label from an agent quote.
+- Turn `partial` into `completed` to make a result look better.
+- Ask an LLM to compute a number that ends up in a report.
+- Store OCR output as a final transaction without user confirmation.
+- Upgrade a major dependency version without an ADR.

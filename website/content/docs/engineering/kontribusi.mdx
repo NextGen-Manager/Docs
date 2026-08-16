@@ -1,0 +1,107 @@
+---
+title: Alur kontribusi
+description: Urutan kerja sebelum menulis kode, aturan commit, perubahan yang membutuhkan ADR, dan pemeriksaan sebelum menyatakan selesai.
+---
+
+Dokumen di repository `Docs` menang atas kode. Kalau implementasi menyimpang dari dokumen, yang diperbaiki adalah implementasinya, kecuali ada ADR yang menyatakan sebaliknya.
+
+## Lima aturan yang tidak boleh dilanggar
+
+Aturan berikut berlaku di ketiga repository. Melanggarnya membatalkan klaim inti produk, bukan sekadar melanggar gaya.
+
+1. LLM tidak pernah menjadi sumber angka otoritatif. Skor, BEP, marjin, payback, dan seluruh agregat dihitung kode deterministik.
+2. Setiap angka yang tampil punya provenance: nilai, satuan, sumber, waktu pengambilan, dan tingkat keyakinan.
+3. Kegagalan parsial tidak disamarkan. Status `partial` tetap `partial`, dan komponen yang gagal tidak diberi nilai bawaan.
+4. Uang adalah integer rupiah. Tidak ada `float` di jalur uang, di bahasa apa pun.
+5. Data pengguna tidak bocor ke prompt. Nama pelanggan, nomor telepon, teks struk mentah, dan catatan bebas tidak pernah dikirim ke penyedia LLM.
+
+Kalau sebuah tugas tampak menuntut pelanggaran salah satunya, berhenti dan tanyakan lebih dulu.
+
+## Sebelum menulis kode
+
+1. Baca dokumen sumber yang relevan dengan perubahan, bukan mengandalkan ingatan tentang formula atau kontrak.
+2. Periksa apakah perubahan menyentuh requirement, kontrak API, atau bobot scoring.
+3. Bila termasuk keputusan yang sulit dibalik, tulis ADR lebih dulu.
+4. Pastikan perubahan tidak melintasi batas repository.
+
+## Perubahan yang membutuhkan ADR
+
+Buat ADR **sebelum** pekerjaan dimulai untuk:
+
+- mengganti atau menaikkan major version framework;
+- mengubah batas antara OASIS dan kode deterministik;
+- mengubah bobot atau ambang scoring;
+- mengganti penyedia data atau penyedia LLM;
+- mengubah bentuk endpoint yang sudah dipakai frontend.
+
+ADR memuat konteks, keputusan, konsekuensi positif dan negatif, alternatif yang ditolak beserta alasannya, cara validasi, dan referensi. Bagian alternatif yang ditolak itulah yang membuat ADR berguna enam bulan kemudian.
+
+ADR tidak dihapus. Keputusan yang usang diberi status superseded dan menunjuk ADR penggantinya.
+
+## Commit dan branch
+
+- Satu commit untuk satu perubahan logis.
+- Pesan commit ditulis dalam Bahasa Inggris.
+- Perubahan yang menyentuh requirement memperbarui dokumen, kontrak, dan test dalam commit yang sama.
+- Jangan pernah commit `.env`, kunci API, dump database, trace OASIS, PDF milik pengguna, atau foto struk.
+
+## Perubahan yang menyentuh kontrak
+
+Kontrak diubah dari dokumen ke kode, bukan sebaliknya.
+
+1. Perbarui dokumen kontrak di `Docs`.
+2. Ubah schema backend dan test kontraknya.
+3. Ekspor ulang snapshot OpenAPI, lalu bangkitkan referensi endpoint pada website dokumentasi.
+4. Perbarui kontrak Zod di frontend dan test yang memakainya.
+5. Perbarui halaman dokumentasi publik yang merangkum kontrak tersebut, dalam kedua bahasa.
+
+## Menulis dokumentasi publik
+
+- Setiap halaman Bahasa Indonesia wajib punya pasangan Bahasa Inggris dengan struktur setara.
+- Kedua locale harus menyampaikan makna, angka, limitation, dan status validasi yang sama.
+- Bedakan yang sudah tersedia dari yang masih target. Jangan menulis target sebagai fitur selesai.
+- Jangan menyatakan scoring sudah tervalidasi pakar selama validasi itu belum dilakukan.
+- Contoh payload, transaksi, struk, dan laporan hanya memakai data sintetis.
+- Catatan progres internal dan serah terima tetap di repository dan tidak masuk navigasi publik.
+
+## Sebelum menyatakan selesai
+
+Backend:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app
+uv run pytest
+uv run alembic check
+```
+
+Frontend:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:e2e
+npm run build
+```
+
+Website dokumentasi:
+
+```bash
+npm run lint
+npm run types:check
+npm run docs:validate
+npm run build
+```
+
+Laporkan hasilnya apa adanya. Kalau ada test yang gagal, sebutkan beserta outputnya. Kalau ada bagian yang terblokir, kerjakan sisanya dan katakan bagian mana yang ditinggalkan beserta alasannya.
+
+## Yang tidak boleh dilakukan
+
+- Menghapus disclaimer decision support, bagian Evidence Confidence, atau bagian bukti dan keterbatasan demi tampilan yang lebih ringkas.
+- Menghapus label respons sintetis pada kutipan agent.
+- Mengubah `partial` menjadi `completed` agar hasil terlihat lebih baik.
+- Meminta LLM menghitung angka yang masuk laporan.
+- Menyimpan hasil OCR sebagai transaksi final tanpa konfirmasi pengguna.
+- Menaikkan major version dependency tanpa ADR.

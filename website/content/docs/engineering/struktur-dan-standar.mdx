@@ -1,43 +1,88 @@
 ---
 title: Struktur kode dan standar
-description: Struktur repository, hubungan antarkomponen, standar teknis, dan pemeriksaan kualitas SimuMarket AI.
+description: Struktur tiga repository, arah dependency, prinsip coding, dan standar teknis yang mengikat seluruh kode SimuMarket AI.
 ---
 
-SimuMarket AI dipisahkan menjadi tiga repository. `Docs` adalah sumber kebenaran produk dan arsitektur, `SimuMarketAI` berisi aplikasi Next.js, sedangkan `SimuMarketAI-BE` berisi FastAPI, worker, engine deterministik, dan integrasi eksternal. Tidak ada import lintas repository.
+SimuMarket AI dipisahkan menjadi tiga repository. `Docs` adalah sumber kebenaran produk dan arsitektur, `SimuMarketAI` berisi aplikasi Next.js, dan `SimuMarketAI-BE` berisi FastAPI, worker, engine deterministik, serta integrasi eksternal. Tidak ada import lintas repository; kontraknya adalah HTTP API dan skema OpenAPI.
 
-## Frontend
+## Struktur repository
 
-Kode aplikasi menggunakan Next.js App Router dan TypeScript. Route berada di `src/app`, komponen fitur di `src/features`, komponen lintas fitur di `src/components`, dan kontrak transport di `src/lib/contracts`. Halaman demo diisolasi dari route aplikasi nyata agar fixture tidak dapat terbaca sebagai data produksi.
+```text
+Docs/
+  docs/            dokumen teknis bernomor dan ADR
+  website/         website dokumentasi publik
 
-Prinsip utamanya:
+SimuMarketAI/
+  src/app/         route, layout, dan proxy backend
+  src/components/  primitive UI dan komponen lintas fitur
+  src/features/    auth, analysis, education, business, transaction, analytics
+  src/lib/         API client, kontrak Zod, formatter, dan access policy
+  src/demo/        komponen dan data seed interactive demo
+  tests/ e2e/      unit, component, dan browser tests
 
-- server adalah sumber angka laporan dan analytics;
-- frontend tidak menghitung ulang skor, uang, atau aggregate;
-- route guard mengikuti capability dan membership dari server;
-- teks pengguna berbahasa Indonesia;
-- komponen kecil menangani satu tanggung jawab dan memakai token desain bersama.
+SimuMarketAI-BE/
+  app/api/           router, dependency, dan DTO HTTP
+  app/core/          config, security, logging, dan correlation ID
+  app/domain/        kontrak evidence, agent, artifact, dan state
+  app/engines/       finance, scoring, analytics, dan report deterministik
+  app/integrations/  OASIS, evidence provider, OCR, dan object storage
+  app/repositories/  akses data tenant-scoped
+  app/services/      use case dan orchestration
+  app/workers/       Celery worker dan scheduler
+  migrations/        revision Alembic
+  tests/             unit, integration, contract, security, dan recovery tests
+```
 
-## Backend
+## Arah dependency
 
-Backend memakai dependency direction `api -> services -> domain/repositories/integrations`. Engine di `app/engines` tidak boleh mengimpor adapter LLM atau layanan eksternal. Formula finansial dan scoring menerima typed input serta mengembalikan hasil deterministik.
+Backend memakai arah `api -> services -> domain, repositories, integrations`.
 
-Integrasi eksternal dibungkus adapter. Repository menangani persistence dan tenant scope. Service mengorkestrasi use case, transaction boundary, idempotency, serta state transition. Worker menjalankan pekerjaan async yang dapat dipulihkan tanpa menjadikan Redis sebagai system of record.
+| Aturan | Alasan |
+|---|---|
+| `engines/` tidak boleh mengimpor `integrations/` | Engine harus dapat diuji tanpa jaringan, tanpa database, dan tanpa LLM |
+| `api/` tidak memanggil `integrations/` langsung | Orchestration dan transaction boundary milik service layer |
+| Service tidak menulis SQL mentah | Tenant scope ditegakkan di repository, bukan tersebar |
+| Adapter membungkus setiap provider eksternal | Provider dapat diganti tanpa menyentuh engine |
+
+Frontend memakai arah `features -> components/ui, lib`. Satu feature tidak mengimpor internal feature lain; kalau ada kebutuhan bersama, kodenya dinaikkan ke `lib` atau `components/ui`. Halaman demo diisolasi agar fixture tidak dapat terbaca sebagai data produksi dan tidak ikut ke bundle produksi.
+
+## Prinsip coding
+
+**Angka mengalir satu arah.** Deterministic engine menghasilkan angka, artifact membawanya, UI menampilkannya. Tidak ada layar yang menghitung ulang skor, uang, atau agregat. Kalau sebuah komponen mulai menjumlahkan uang, yang kurang adalah kontrak API, bukan komponennya.
+
+**Uang tidak pernah `float`.** Di backend uang adalah `int` rupiah atau `Decimal`. Di frontend uang adalah integer dari API yang hanya diformat. Nilai yang tidak terdefinisi ditulis apa adanya, bukan sebagai nol, tanda hubung, atau tak hingga.
+
+**Kegagalan bersifat eksplisit.** Komponen yang gagal ditandai, bukan diberi nilai bawaan. Error membawa kode yang dapat dibaca mesin, pesan aman, dan correlation ID.
+
+**Data eksternal diparsing, bukan di-cast.** Payload masuk divalidasi pada batas sistem melalui schema, baik di Pydantic maupun Zod.
+
+**Komentar menjelaskan kenapa.** Nama yang jelas menjelaskan apa; komentar dipakai untuk alasan yang tidak terbaca dari kode.
 
 ## Standar teknis
 
 | Area | Aturan |
 |---|---|
-| Uang | Integer rupiah, bukan floating point |
+| Uang | Integer rupiah, tanpa floating point |
 | Waktu | UTC pada persistence dan API; locale hanya saat rendering |
-| Identifier | UUID dan tidak mempunyai makna bisnis |
-| Error | Machine-readable code dengan pesan aman untuk pengguna |
+| Identifier | UUID tanpa makna bisnis |
+| Error | Kode machine-readable dengan pesan aman berbahasa Indonesia |
 | Tenant isolation | Resource di luar membership dikembalikan sebagai `404` |
-| Idempotency | Operasi create yang sensitif terhadap retry memakai idempotency key |
-| Agent output | Structured artifact tervalidasi, bukan free-form authority |
-| Evidence | Nilai, unit, geography, sumber, waktu, quality, limitation |
+| Idempotency | Operasi create yang rawan retry memakai idempotency key |
+| Agent output | Structured artifact tervalidasi, bukan prosa bebas yang dipercaya |
+| Evidence | Nilai, unit, geography, sumber, waktu, quality, dan limitation |
+| Scoring | Rule versioned; `rule_version` selalu ikut pada output |
+| Migration | Reversible dan diverifikasi terhadap model |
+
+## Bahasa
+
+- Teks yang dilihat pengguna memakai Bahasa Indonesia, termasuk pesan error dan teks keadaan kosong.
+- Kode, nama variabel, nama file, dan commit message memakai Bahasa Inggris.
+- Nama field, endpoint, state, dan istilah kode tetap Inggris di seluruh dokumentasi.
 
 ## Pemeriksaan kualitas
 
-Frontend harus lolos lint, typecheck, unit test, end-to-end test, build, dan production dependency audit. Backend harus lolos Ruff, MyPy, Pytest, pemeriksaan migration Alembic, serta migration round-trip pada PostgreSQL.
+Frontend harus lolos lint, typecheck, unit test, end-to-end test, build, dan audit dependency produksi. Backend harus lolos Ruff, MyPy, Pytest, pemeriksaan migration Alembic, serta migration round-trip pada PostgreSQL.
 
-Perubahan kontrak publik, major framework, boundary OASIS, scoring, atau provider membutuhkan keputusan arsitektur sebelum implementasi.
+Engine finance dan scoring memiliki golden test dengan fixture JSON yang dibagikan ke frontend, sehingga kedua sisi tidak dapat menyimpang diam-diam. Jalur gagal ikut diuji: provider timeout, schema invalid, margin negatif, evidence kosong, dan akses lintas tenant.
+
+Perubahan kontrak publik, major framework, boundary OASIS, bobot scoring, atau provider membutuhkan keputusan arsitektur sebelum implementasi. Alurnya ada pada [Alur kontribusi](./kontribusi).

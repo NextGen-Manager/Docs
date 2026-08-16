@@ -1,43 +1,88 @@
 ---
 title: Code structure and standards
-description: Repository boundaries, dependency direction, conventions, and quality gates for SimuMarket AI.
+description: The three-repository layout, dependency direction, coding principles, and the technical standards binding all SimuMarket AI code.
 ---
 
-SimuMarket AI is split into three repositories. `Docs` is the source of truth for product and architecture, `SimuMarketAI` contains the Next.js application, and `SimuMarketAI-BE` contains FastAPI, workers, deterministic engines, and external integrations. Repositories do not import from each other.
+SimuMarket AI is split into three repositories. `Docs` is the source of truth for product and architecture, `SimuMarketAI` holds the Next.js application, and `SimuMarketAI-BE` holds FastAPI, the workers, the deterministic engines, and external integrations. There are no cross-repository imports; the contract is the HTTP API and the OpenAPI schema.
 
-## Frontend
+## Repository layout
 
-The application uses the Next.js App Router and TypeScript. Routes live in `src/app`, feature components in `src/features`, shared components in `src/components`, and transport contracts in `src/lib/contracts`. Demo pages are isolated from real application routes so fixtures cannot be mistaken for production data.
+```text
+Docs/
+  docs/            numbered technical documents and ADRs
+  website/         the public documentation site
 
-Core principles:
+SimuMarketAI/
+  src/app/         routes, layouts, and the backend proxy
+  src/components/  UI primitives and cross-feature components
+  src/features/    auth, analysis, education, business, transaction, analytics
+  src/lib/         API client, Zod contracts, formatters, and access policy
+  src/demo/        interactive demo components and seed data
+  tests/ e2e/      unit, component, and browser tests
 
-- the server is authoritative for report and analytics numbers;
-- the frontend never recalculates scores, money, or aggregates;
-- route guards follow server-provided capabilities and membership;
-- user-facing product copy is in Indonesian;
-- small components have one responsibility and share design tokens.
+SimuMarketAI-BE/
+  app/api/           routers, dependencies, and HTTP DTOs
+  app/core/          config, security, logging, and correlation IDs
+  app/domain/        evidence, agent, artifact, and state contracts
+  app/engines/       deterministic finance, scoring, analytics, and report
+  app/integrations/  OASIS, evidence providers, OCR, and object storage
+  app/repositories/  tenant-scoped data access
+  app/services/      use cases and orchestration
+  app/workers/       Celery workers and scheduler
+  migrations/        Alembic revisions
+  tests/             unit, integration, contract, security, and recovery tests
+```
 
-## Backend
+## Dependency direction
 
-The backend follows the dependency direction `api -> services -> domain/repositories/integrations`. Engines under `app/engines` cannot import LLM adapters or external services. Finance and scoring formulas accept typed inputs and return deterministic results.
+The backend follows `api -> services -> domain, repositories, integrations`.
 
-External systems are wrapped by adapters. Repositories handle persistence and tenant scope. Services orchestrate use cases, transaction boundaries, idempotency, and state transitions. Workers execute recoverable asynchronous jobs without treating Redis as the system of record.
+| Rule | Reason |
+|---|---|
+| `engines/` must not import `integrations/` | Engines must be testable without network, database, or LLM |
+| `api/` does not call `integrations/` directly | Orchestration and transaction boundaries belong to the service layer |
+| Services do not write raw SQL | Tenant scope is enforced in repositories, not scattered |
+| Adapters wrap every external provider | Providers can be replaced without touching engines |
+
+The frontend follows `features -> components/ui, lib`. One feature never imports another feature's internals; shared needs are promoted into `lib` or `components/ui`. Demo pages are isolated so fixtures cannot be read as production data and do not reach the production bundle.
+
+## Coding principles
+
+**Numbers flow one way.** The deterministic engine produces numbers, artifacts carry them, the UI displays them. No screen recomputes a score, a money value, or an aggregate. If a component starts summing money, the missing piece is the API contract, not the component.
+
+**Money is never `float`.** In the backend money is `int` rupiah or `Decimal`. In the frontend money is an integer from the API that is only formatted. Undefined values are written as undefined, not as zero, a dash, or infinity.
+
+**Failure is explicit.** A failed component is marked, never given a default value. Errors carry a machine-readable code, a safe message, and a correlation ID.
+
+**External data is parsed, not cast.** Incoming payloads are validated at the system boundary through schemas, in Pydantic and in Zod alike.
+
+**Comments explain why.** Clear names explain what; comments carry the reasoning that the code cannot show.
 
 ## Technical standards
 
 | Area | Rule |
 |---|---|
-| Money | Integer rupiah, never floating point |
-| Time | UTC in persistence and APIs; locale only at rendering time |
-| Identifiers | UUIDs with no embedded business meaning |
-| Errors | Machine-readable code with a safe user message |
-| Tenant isolation | Resources outside membership return `404` |
-| Idempotency | Retry-sensitive create operations use an idempotency key |
-| Agent output | Validated structured artifacts, never free-form authority |
+| Money | Integer rupiah, no floating point |
+| Time | UTC in persistence and the API; locale only at render time |
+| Identifiers | UUIDs with no business meaning |
+| Errors | Machine-readable code with a safe Indonesian message |
+| Tenant isolation | Resources outside a membership return `404` |
+| Idempotency | Retry-prone create operations use an idempotency key |
+| Agent output | Validated structured artifacts, never trusted free prose |
 | Evidence | Value, unit, geography, source, time, quality, and limitations |
+| Scoring | Versioned rules; `rule_version` always travels with the output |
+| Migrations | Reversible and verified against the models |
+
+## Language
+
+- User-facing text is Indonesian, including error messages and empty-state text.
+- Code, variable names, file names, and commit messages are English.
+- Field names, endpoints, states, and code terms stay English throughout the documentation.
 
 ## Quality checks
 
-The frontend must pass linting, type checking, unit tests, end-to-end tests, builds, and production dependency audits. The backend must pass Ruff, MyPy, Pytest, Alembic migration checks, and a PostgreSQL migration round trip.
+The frontend must pass lint, typecheck, unit tests, end-to-end tests, build, and a production dependency audit. The backend must pass Ruff, MyPy, Pytest, the Alembic migration check, and a migration round trip on PostgreSQL.
 
-Changes to public contracts, major framework versions, the OASIS boundary, scoring, or providers require an architecture decision before implementation.
+The finance and scoring engines have golden tests with JSON fixtures shared with the frontend, so the two sides cannot drift apart silently. Failure paths are tested too: provider timeout, invalid schema, negative margin, empty evidence, and cross-tenant access.
+
+Changes to a public contract, a major framework, the OASIS boundary, scoring weights, or a provider require an architecture decision before implementation. The process is described in [Contribution workflow](./kontribusi).
