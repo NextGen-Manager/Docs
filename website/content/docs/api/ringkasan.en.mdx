@@ -1,42 +1,131 @@
 ---
 title: API overview
-description: Transport conventions, authentication, idempotency, asynchronous jobs, and errors in the SimuMarket AI API.
+description: Transport conventions, authentication, the analysis state machine, SSE and polling, idempotency, and the error shape of the SimuMarket AI API.
 ---
 
-The SimuMarket AI HTTP API uses the `/v1` prefix. An OpenAPI schema exported from FastAPI is the source for endpoint and schema reference on this site. The base URL depends on the deployment environment.
+The SimuMarket AI HTTP API uses the `/v1` prefix. The OpenAPI schema exported from FastAPI is the reference for endpoints and schemas on this site. The base URL depends on the deployment environment.
 
 ## Conventions
 
-| Area | Format |
+| Area | Shape |
 |---|---|
-| Content type | `application/json`, except SSE and direct object-storage uploads |
+| Content type | `application/json`, except SSE and direct uploads to object storage |
 | Money | Integer IDR, for example `49000`, never `49000.0` |
 | Time | ISO 8601 in UTC |
 | Resource IDs | UUID |
 | Authentication | Access and refresh tokens in `HttpOnly` cookies |
-| Correlation | `X-Correlation-ID` for request tracing |
-| Retried creates | `Idempotency-Key` on retryable operations |
+| Correlation | `X-Correlation-ID` for tracing a request |
+| Create retries | `Idempotency-Key` on operations that support retry |
 
-Browsers must send cookie credentials on cross-origin requests. Tokens are not stored in `localStorage`. A successful refresh rotates the refresh token and invalidates the previous version.
+Browsers must send cookie credentials on cross-origin requests. Tokens are not kept in `localStorage`. Refresh tokens rotate after a successful refresh, and the previous value cannot be reused.
 
-## Business access and RBAC
+## Business scope and RBAC
 
-Roles belong to a user-business membership, not to a user globally. An `owner` manages the business profile, products, members, analyses, and reports. A `cashier` can only record transactions for a business where they hold membership. Resources from another tenant return `404` so their existence is not disclosed.
+A role belongs to a user and business membership, not to a user globally. `owner` manages the business profile, products, members, analyses, and reports. `cashier` can only read active products and record transactions in the business they belong to. Resources from another tenant return `404` so their existence does not leak.
 
-Business-scoped endpoints accept `business_id` through query parameters or the request body as defined by their schema. Every receipt-import endpoint requires the `business_id` query parameter at each step, including create, upload completion, read, draft edit, and confirmation.
+Endpoints that operate in a business context accept `business_id` in the query or body according to the schema. Every receipt import endpoint takes `business_id` as a query parameter at each step, including create, complete upload, read, edit draft, and confirm.
 
 ## Asynchronous processing
 
-Analysis, OCR, and export do not have to finish during the initial request. A create endpoint returns `202 Accepted` or a queued resource. The client reads resource status until it becomes terminal. Analysis also provides Server-Sent Events.
+Analysis, OCR, and export do not finish within the initial request. The create endpoint returns a queued resource, and the client reads the status until it is terminal.
 
-For SSE, retain the most recent `event_id` and send it as `Last-Event-ID` when reconnecting. Events are persisted to PostgreSQL before publication. If the stream disconnects, the resource status becomes the primary reference.
+### Analysis state machine
 
-## Errors and partial results
+<Mermaid
+  title="Diagram 1. The analysis state order and its four terminal states."
+  chart={`stateDiagram-v2
+  [*] --> queued
+  queued --> collecting_evidence
+  collecting_evidence --> building_context
+  building_context --> simulating
+  building_context --> calculating_finance: simulation stage skipped
+  simulating --> calculating_finance
+  calculating_finance --> scoring
+  scoring --> composing_report
+  composing_report --> validating_report
+  validating_report --> completed
+  validating_report --> partial
+  validating_report --> failed
+  queued --> cancelled
+  simulating --> cancelled
+  completed --> [*]
+  partial --> [*]
+  failed --> [*]
+  cancelled --> [*]`}
+/>
 
-Errors contain a machine-readable code, safe message, field details when relevant, and a correlation ID. Internal traces must not be shown to users. `409 EDUCATION_PREREQUISITE_NOT_MET` means required education is incomplete, not that the server failed.
+| Terminal value | Meaning |
+|---|---|
+| `completed` | Every planned component succeeded |
+| `partial` | The deterministic part is available, another component is not. Neither a failure nor a full success |
+| `failed` | The run produced no usable report |
+| `cancelled` | The run was stopped before completion |
 
-A `partial` status is a valid output when some evidence or a provider is unavailable. Clients must display server warnings and limitations without filling missing values or converting the state into success.
+The `simulating` stage can be removed from the plan when a deployment has no agent adapter at all. A removed stage is reported as skipped rather than credited as completed work, so the progress percentage never describes work that did not happen.
+
+### SSE and the polling fallback
+
+The analysis events endpoint emits events named `status`. Every transition is persisted to PostgreSQL before publication; Redis is only transport.
+
+```text
+id: 4
+event: status
+data: {"schema_version":"analysis-event-v1","event_id":"4","status":"simulating",
+       "current_stage":"simulating","completed_stages":["queued","collecting_evidence",
+       "building_context"],"skipped_stages":[],"percent":45,
+       "message":"Panel persona sedang mengevaluasi skenario","warnings":[],
+       "failure_code":null,"correlation_id":"...","occurred_at":"2026-08-15T08:01:20Z"}
+```
+
+Client rules:
+
+- keep the last `event_id` and send it as `Last-Event-ID` when reconnecting; the server resumes from the next sequence without replaying old events;
+- `event_id` increases monotonically per analysis;
+- `failure_code` is `null` on a normal run and carries a safe code on terminal failure;
+- do not infer the cause of failure from the order of `warnings`;
+- if the stream keeps dropping, poll the resource status snapshot every three seconds. The snapshot reads current state directly, so it is not compared against `event_id`.
+
+The progress percentage comes from the weighted stage completion the backend sends. Clients do not compute it.
+
+## Idempotency
+
+| Operation | Mechanism |
+|---|---|
+| Create analysis | `Idempotency-Key` header, unique per user |
+| Create transaction | Optional `client_reference`, unique per business when set |
+| Confirm receipt import | Re-confirmation returns the same transaction |
+| Create export | Idempotency key on artifact creation |
+
+The goal is the same in every case: a request sent twice through a double click, a reconnect, or a network retry must not produce two records.
+
+## Error shape
+
+```json
+{
+  "error": {
+    "code": "ANALYSIS_INPUT_INCOMPLETE",
+    "message": "Data biaya variabel diperlukan untuk menghitung BEP.",
+    "fields": [{"path": "pricing.variable_cost_per_unit_idr", "reason": "required"}],
+    "correlation_id": "uuid",
+    "retryable": false
+  }
+}
+```
+
+| Field | Purpose |
+|---|---|
+| `code` | A stable, machine-readable code |
+| `message` | An Indonesian message safe to display |
+| `fields` | Per-field detail when the error is a validation error |
+| `correlation_id` | The link to logs and traces when a user reports a problem |
+| `retryable` | Determines whether a retry button makes sense |
+
+Error responses never contain a stack trace, a prompt, or a raw provider response. `409 EDUCATION_PREREQUISITE_NOT_MET` means a required module is incomplete, not that the server failed.
+
+A `partial` status is a legitimate outcome, not an error. Clients show the server's warnings and limitations without filling in missing values or presenting the run as a success.
 
 ## Endpoint reference
 
-The [Endpoint reference](./referensi) is generated from a backend OpenAPI snapshot. The interactive playground is disabled in the public documentation to prevent examples from accidentally sending requests to a production environment.
+The [endpoint reference](./referensi) is generated from the backend OpenAPI snapshot, so it contains exactly the endpoints that genuinely exist. The interactive playground is disabled in the public documentation so an example cannot accidentally send a request to a production environment.
+
+Endpoint contracts that are designed but not yet implemented are not mixed into this reference. Their shapes are discussed as target contracts on [Target design](/en/docs/arsitektur/desain-target).

@@ -1,11 +1,11 @@
 ---
 title: Ringkasan API
-description: Konvensi transport, autentikasi, idempotensi, pemrosesan asinkron, dan penanganan error API SimuMarket AI.
+description: Konvensi transport, autentikasi, state machine analysis, SSE dan polling, idempotensi, serta bentuk error API SimuMarket AI.
 ---
 
-API HTTP SimuMarket AI menggunakan prefix `/v1`. Skema OpenAPI yang diekspor dari FastAPI menjadi sumber referensi endpoint dan schema di website ini. Base URL bergantung pada environment deployment.
+API HTTP SimuMarket AI memakai prefix `/v1`. Skema OpenAPI yang diekspor dari FastAPI menjadi sumber referensi endpoint dan schema di website ini. Base URL bergantung pada environment deployment.
 
-## Konvensi API
+## Konvensi
 
 | Area | Bentuk |
 |---|---|
@@ -17,26 +17,115 @@ API HTTP SimuMarket AI menggunakan prefix `/v1`. Skema OpenAPI yang diekspor dar
 | Correlation | `X-Correlation-ID` untuk menelusuri request |
 | Retry create | `Idempotency-Key` pada operasi yang mendukung retry |
 
-Browser harus mengirim credential cookie pada request lintas origin. Token tidak disimpan di `localStorage`. Refresh token dirotasi setelah refresh berhasil dan versi lama tidak dapat digunakan kembali.
+Browser harus mengirim credential cookie pada request lintas origin. Token tidak disimpan di `localStorage`. Refresh token dirotasi setelah refresh berhasil dan versi lama tidak dapat dipakai kembali.
 
 ## Ruang lingkup usaha dan RBAC
 
-Role melekat pada membership user dan usaha, bukan pada user secara global. `owner` mengelola profil usaha, produk, anggota, analysis, dan report. `cashier` hanya dapat mencatat transaksi pada usaha tempatnya menjadi anggota. Resource dari tenant lain dikembalikan sebagai `404` agar keberadaannya tidak bocor.
+Role melekat pada membership user dan usaha, bukan pada user secara global. `owner` mengelola profil usaha, produk, anggota, analysis, dan report. `cashier` hanya dapat membaca produk aktif dan mencatat transaksi pada usaha tempatnya menjadi anggota. Resource dari tenant lain dikembalikan sebagai `404` agar keberadaannya tidak bocor.
 
 Endpoint yang bekerja dalam konteks usaha menerima `business_id` melalui query atau body sesuai schema. Seluruh endpoint receipt import memakai query `business_id` pada setiap langkah, termasuk create, complete upload, read, edit draft, dan confirm.
 
 ## Pemrosesan asinkron
 
-Analysis, OCR, dan export tidak harus selesai pada request awal. Create endpoint mengembalikan `202 Accepted` atau resource berstatus antre. Client membaca status resource sampai terminal. Analysis juga menyediakan Server-Sent Events.
+Analysis, OCR, dan export tidak selesai pada request awal. Create endpoint mengembalikan resource berstatus antre, lalu client membaca status sampai terminal.
 
-Untuk SSE, simpan `event_id` terakhir dan kirim sebagai `Last-Event-ID` ketika menyambung kembali. Event disimpan ke PostgreSQL sebelum dipublikasikan. Jika stream terputus, status resource menjadi rujukan utama.
+### State machine analysis
 
-## Error dan hasil parsial
+<Mermaid
+  title="Diagram 1. Urutan state analysis dan keempat keadaan terminalnya."
+  chart={`stateDiagram-v2
+  [*] --> queued
+  queued --> collecting_evidence
+  collecting_evidence --> building_context
+  building_context --> simulating
+  building_context --> calculating_finance: tahap simulasi dilewati
+  simulating --> calculating_finance
+  calculating_finance --> scoring
+  scoring --> composing_report
+  composing_report --> validating_report
+  validating_report --> completed
+  validating_report --> partial
+  validating_report --> failed
+  queued --> cancelled
+  simulating --> cancelled
+  completed --> [*]
+  partial --> [*]
+  failed --> [*]
+  cancelled --> [*]`}
+/>
 
-Setiap respons error memuat kode yang dapat dibaca mesin, pesan aman, detail field bila relevan, dan correlation ID. Trace internal tidak ditampilkan kepada pengguna. `409 EDUCATION_PREREQUISITE_NOT_MET` menyatakan modul wajib belum selesai, bukan kegagalan server.
+| Nilai terminal | Arti |
+|---|---|
+| `completed` | Seluruh komponen yang direncanakan berhasil |
+| `partial` | Bagian deterministik tersedia, komponen lain tidak. Bukan kegagalan dan bukan sukses penuh |
+| `failed` | Run tidak menghasilkan laporan yang dapat dipakai |
+| `cancelled` | Run dihentikan sebelum selesai |
 
-Status `partial` adalah output yang sah ketika sebagian evidence atau provider tidak tersedia. Client harus menampilkan warning dan limitation dari server, tanpa mengisi nilai yang hilang atau mengubahnya menjadi sukses.
+Stage `simulating` dapat dikeluarkan dari rencana ketika deployment tidak memiliki adapter agent sama sekali. Stage yang dikeluarkan dilaporkan sebagai skipped, bukan dihitung sebagai pekerjaan yang selesai, sehingga persentase progres tidak menggambarkan pekerjaan yang tidak pernah terjadi.
+
+### SSE dan fallback polling
+
+Endpoint event analysis mengirim event bernama `status`. Setiap transisi disimpan ke PostgreSQL sebelum dipublikasikan; Redis hanya transport.
+
+```text
+id: 4
+event: status
+data: {"schema_version":"analysis-event-v1","event_id":"4","status":"simulating",
+       "current_stage":"simulating","completed_stages":["queued","collecting_evidence",
+       "building_context"],"skipped_stages":[],"percent":45,
+       "message":"Panel persona sedang mengevaluasi skenario","warnings":[],
+       "failure_code":null,"correlation_id":"...","occurred_at":"2026-08-15T08:01:20Z"}
+```
+
+Aturan client:
+
+- simpan `event_id` terakhir dan kirim sebagai `Last-Event-ID` saat menyambung kembali; server melanjutkan dari sequence berikutnya tanpa mengulang event lama;
+- `event_id` meningkat monotonik per analysis;
+- `failure_code` bernilai `null` pada run normal dan membawa kode aman pada kegagalan terminal;
+- jangan menebak penyebab kegagalan dari urutan `warnings`;
+- bila stream berulang kali terputus, ambil snapshot status resource setiap tiga detik. Snapshot membaca state terbaru secara langsung, jadi ia tidak perlu dibandingkan dengan `event_id`.
+
+Persentase progres berasal dari weighted stage completion yang dikirim backend. Client tidak menghitungnya sendiri.
+
+## Idempotensi
+
+| Operasi | Mekanisme |
+|---|---|
+| Membuat analysis | Header `Idempotency-Key`, unik per user |
+| Membuat transaksi | `client_reference` opsional, unik per usaha ketika terisi |
+| Konfirmasi receipt import | Konfirmasi ulang mengembalikan transaksi yang sama |
+| Membuat export | Idempotency key pada pembuatan artifact |
+
+Tujuannya sama di semua kasus: permintaan yang terkirim dua kali karena klik ganda, reconnect, atau retry jaringan tidak boleh menghasilkan dua record.
+
+## Bentuk error
+
+```json
+{
+  "error": {
+    "code": "ANALYSIS_INPUT_INCOMPLETE",
+    "message": "Data biaya variabel diperlukan untuk menghitung BEP.",
+    "fields": [{"path": "pricing.variable_cost_per_unit_idr", "reason": "required"}],
+    "correlation_id": "uuid",
+    "retryable": false
+  }
+}
+```
+
+| Field | Fungsi |
+|---|---|
+| `code` | Kode stabil yang dapat dibaca mesin |
+| `message` | Pesan berbahasa Indonesia yang aman ditampilkan |
+| `fields` | Detail per field bila kesalahan bersifat validasi |
+| `correlation_id` | Penghubung ke log dan trace saat pengguna melapor |
+| `retryable` | Menentukan apakah tombol coba lagi masuk akal |
+
+Respons error tidak pernah memuat stack trace, prompt, atau respons provider mentah. `409 EDUCATION_PREREQUISITE_NOT_MET` menyatakan modul wajib belum selesai, bukan kegagalan server.
+
+Status `partial` adalah hasil yang sah, bukan error. Client menampilkan warning dan limitation dari server tanpa mengisi nilai yang hilang atau mengubahnya menjadi sukses.
 
 ## Referensi endpoint
 
-Bagian [Referensi endpoint](./referensi) dibangkitkan dari snapshot OpenAPI backend. Playground interaktif dinonaktifkan pada dokumentasi publik agar contoh tidak mengirim request ke environment produksi secara tidak sengaja.
+Bagian [Referensi endpoint](./referensi) dibangkitkan dari snapshot OpenAPI backend, sehingga isinya persis endpoint yang benar-benar ada. Playground interaktif dinonaktifkan pada dokumentasi publik agar contoh tidak mengirim request ke environment produksi secara tidak sengaja.
+
+Kontrak endpoint yang sudah dirancang tetapi belum diimplementasikan tidak dicampur ke referensi ini. Bentuknya dibahas sebagai target contract pada [Desain target](/docs/arsitektur/desain-target).
