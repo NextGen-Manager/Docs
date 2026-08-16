@@ -18,7 +18,7 @@ Diverifikasi pada **6 Agustus 2026**. Setiap versi wajib diverifikasi ulang sebe
 | Simulasi agent | `camel-oasis` 0.2.5 | rilis terakhir 4 Des 2025 |
 | Model interface | `camel-ai` 0.2.78 | ditarik oleh oasis 0.2.5 |
 | Kompatibilitas MCP worker | `mcp` 1.29.0, constraint `<2` | MCP 2.0 menghapus lokasi import `FastMCP` yang masih dipakai CAMEL 0.2.78; diverifikasi lewat import probe 15 Agustus 2026 |
-| LLM | `gemini-3.1-flash-lite` | **berubah dari 2.5** — lihat risiko di bawah |
+| LLM default | Gemini melalui `gemini-3.1-flash-lite` | OpenAI didukung sebagai provider alternatif per deployment melalui ADR-005 |
 | Structured output | LangChain (versi dipin saat spike) | di luar loop social interaction |
 | Database | PostgreSQL 16 + pgvector | |
 | Queue | Redis 7 + Celery 5.x | |
@@ -57,6 +57,8 @@ Risiko yang menyertai paket yang stagnan:
 Karena jadwal GEMASTIK berpotensi melewati Oktober 2026, memin ke 2.5 berarti menjadwalkan migrasi tepat di tengah masa kritis.
 
 **Keputusan:** pakai `gemini-3.1-flash-lite` sebagai model default — stabil, runway panjang, biaya mirip flash-lite generasi sebelumnya. Model preview (`-preview` pada namanya) **dilarang** untuk jalur demo karena dapat berubah tanpa pemberitahuan.
+
+Provider live dipilih per deployment melalui `OASIS_PROVIDER=gemini|openai`, sedangkan model dipilih melalui `OASIS_MODEL_ID`. Kredensial tetap terpisah pada `GEMINI_API_KEY` dan `OPENAI_API_KEY`; sistem tidak melakukan fallback provider otomatis. Gemini tetap menjadi default sampai benchmark live menunjukkan alasan untuk mengubahnya. Keputusan lengkap ada di [ADR-005](adr/ADR-005-oasis-multi-provider.md).
 
 Model aktif MVP:
 

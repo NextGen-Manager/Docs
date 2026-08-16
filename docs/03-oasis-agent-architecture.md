@@ -117,7 +117,7 @@ agent_id: persona-budget-01
 role: customer_persona
 archetype: budget_driven
 profile_version: persona-v1
-model_profile: gemini-low-cost-v1
+model_profile: deployment-default-v1
 objectives:
   - evaluate_offer_for_current_meal_occasion
 constraints:
@@ -181,6 +181,8 @@ Probability band di atas adalah ekspresi agent sintetis, bukan probabilitas duni
 - Semua rekomendasi report harus menunjuk artifact ID.
 - Hard limit jumlah persona, round, token, concurrency, wall-clock, dan retry.
 - Simpan model/provider version karena alias model dapat berubah.
+
+Provider dan model dipilih per deployment melalui `OASIS_PROVIDER` dan `OASIS_MODEL_ID`, bukan dari request pengguna. Gemini dan OpenAI memakai council protocol, sanitizer, budget, serta validator artifact yang sama. Resolver provider dan aturan kegagalannya ditetapkan pada [ADR-005](adr/ADR-005-oasis-multi-provider.md).
 
 ## Kenapa ini bukan sekadar chatbot
 

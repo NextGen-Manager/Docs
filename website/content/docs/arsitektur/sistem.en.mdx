@@ -10,7 +10,7 @@ Next.js browser
      -> Redis -> Celery worker
      -> private S3-compatible storage
      -> evidence provider
-     -> OASIS/CAMEL adapter -> Gemini
+     -> OASIS/CAMEL adapter -> Gemini or OpenAI
 ```
 
 ## Component responsibilities
@@ -40,4 +40,3 @@ Every run records an immutable input snapshot, evidence snapshot, correlation ID
 - Safe failure codes remain separate from internal traces.
 - Signed URLs are short-lived while objects stay private.
 - Retention jobs delete artifacts without hiding deletion failures.
-

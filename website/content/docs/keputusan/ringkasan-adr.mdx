@@ -13,6 +13,10 @@ Architecture Decision Record (ADR) mencatat keputusan yang sulit dibalik beserta
 
 Frontend memakai Next.js 16 dengan App Router dan React 19. Next.js 14 yang disebut pada rancangan awal sudah tidak digunakan. Perubahan major berikutnya membutuhkan review compatibility, security, build, dan deployment sebelum kode aplikasi dinaikkan.
 
+## Provider OASIS per deployment
+
+Backend mendukung Gemini dan OpenAI melalui adapter CAMEL yang sama. `OASIS_PROVIDER` dan `OASIS_MODEL_ID` menentukan konfigurasi setiap deployment, sedangkan kredensial tetap disimpan pada environment variable khusus provider. Tidak ada fallback otomatis atau pilihan provider dari request pengguna.
+
 ## Bobot Launch Readiness Score
 
 Rule version aktif adalah `lrs-v0.2-unvalidated` dengan bobot:

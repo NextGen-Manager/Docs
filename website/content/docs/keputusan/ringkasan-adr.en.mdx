@@ -13,6 +13,10 @@ Architecture Decision Records capture difficult-to-reverse decisions with their 
 
 The frontend uses Next.js 16 with the App Router and React 19. Next.js 14 from the initial design is no longer used. A future major upgrade requires compatibility, security, build, and deployment review before application code is upgraded.
 
+## OASIS provider per deployment
+
+The backend supports Gemini and OpenAI through the same CAMEL adapter. `OASIS_PROVIDER` and `OASIS_MODEL_ID` define each deployment, while credentials remain in provider-specific environment variables. There is no automatic fallback or user-selected provider.
+
 ## Launch Readiness Score weights
 
 The active rule version is `lrs-v0.2-unvalidated` with these weights:
