@@ -1,18 +1,18 @@
 ---
-title: Running the complete system
-description: Set up the backend, workers, frontend, and documentation site locally.
+title: Running the system locally
+description: Setting up the backend, database, workers, frontend, and documentation site on a developer machine, including migrations, testing, and production builds.
 ---
 
 ## Prerequisites
 
 - Git.
 - Docker Desktop with Docker Compose.
-- Node.js 22 for the frontend and documentation site.
-- Python 3.11 and `uv` when running the backend outside containers.
+- Node.js 22 for the frontend and the documentation site.
+- Python 3.11 and [uv](https://docs.astral.sh/uv/) if the backend runs outside a container.
 
-Python 3.12 or newer is not used because `camel-oasis 0.2.5` constrains the runtime to Python versions below 3.12.
+Python 3.12 or newer is **not** used. `camel-oasis 0.2.5` constrains the runtime to Python below 3.12, and raising it would break the simulation.
 
-## Clone the repositories
+## Cloning the repositories
 
 ```bash
 git clone https://github.com/NextGen-Manager/SimuMarketAI.git
@@ -20,9 +20,11 @@ git clone https://github.com/NextGen-Manager/SimuMarketAI-BE.git
 git clone https://github.com/NextGen-Manager/Docs.git
 ```
 
-Use compatible branches across the repositories. Do not combine frontend and backend revisions with incompatible contracts.
+Use compatible branches across the repositories. Do not mix a frontend and a backend from different API contracts.
 
-## Complete backend through Docker
+## Backend through Docker Compose
+
+The quickest way to bring up every dependency at once.
 
 ```bash
 cd SimuMarketAI-BE
@@ -30,27 +32,80 @@ docker compose up --build -d
 docker compose exec api uv run alembic upgrade head
 ```
 
-Compose runs the API, worker, beat, PostgreSQL 16, Redis 7, and MinIO. The API is available at `http://localhost:8000`.
+Compose runs six services:
+
+| Service | Purpose | Host port |
+|---|---|---|
+| `api` | FastAPI | 8000 |
+| `worker` | Celery worker for the `analysis` and `artifacts` queues | |
+| `beat` | Celery beat for scheduled recovery and retention | |
+| `postgres` | PostgreSQL 16 with pgvector | 5433 |
+| `redis` | Redis 7 | 6379 |
+| `minio` | S3-compatible object storage | 9000 and 9001 |
+
+PostgreSQL is mapped to host port 5433 because a locally installed PostgreSQL usually already owns 5432, and the conflict surfaces as a confusing authentication failure.
+
+Check the result:
 
 ```bash
 curl http://localhost:8000/v1/health
 curl http://localhost:8000/v1/ready
 ```
 
+`health` checks the API process. `ready` checks the important dependencies. OpenAPI docs are at `http://localhost:8000/docs` and the MinIO console at `http://localhost:9001`.
+
+## Backend without containers
+
+Run only the dependencies through Compose, then the API on the host.
+
+```bash
+cd SimuMarketAI-BE
+docker compose up -d postgres redis minio
+uv sync --all-groups
+cp .env.example .env
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
+```
+
+On PowerShell use `Copy-Item .env.example .env` to copy the configuration. Never commit `.env`.
+
+The OASIS runtime is an optional dependency installed only on the worker. Without it, and without provider credentials, the analysis pipeline still runs and finishes as `partial` with the simulation section reported unavailable. The system does not fabricate agent output.
+
+## Database migrations
+
+```bash
+uv run alembic upgrade head     # apply migrations
+uv run alembic check            # confirm models and migrations agree
+uv run alembic downgrade -1     # roll back one revision
+```
+
+Migrations run once before traffic uses the new schema. API and worker must run the same application revision.
+
+## Celery worker and beat
+
+Compose already runs both. To run them manually:
+
+```bash
+uv run celery -A app.workers.celery_app worker --loglevel=info --queues=analysis,artifacts --concurrency=1
+uv run celery -A app.workers.celery_app beat --loglevel=info
+```
+
+A concurrency of one is a deliberate choice: a run holds a provider budget, and prefetching a second task only makes queue age harder to read. Beat is required so a run whose dispatch failed or whose worker died does not sit non-terminal forever; nothing in Celery can notice a task that never arrived.
+
 ## Frontend
 
 ```bash
 cd SimuMarketAI
-npm install
-copy .env.example .env.local
+npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-The frontend is available at `http://localhost:3000`. `BACKEND_URL` is used by the server-side proxy route so the browser calls a same-origin API path.
+The frontend is available at `http://localhost:3000`. `BACKEND_URL` is used by the server-side proxy route so the browser calls the API through same-origin paths and never touches the backend directly.
 
-## Documentation website
+## Documentation site
 
-Use a different port while the main frontend is running.
+Use a different port when the main frontend is already running.
 
 ```bash
 cd Docs/website
@@ -58,7 +113,15 @@ npm install
 npm run dev -- --port 3001
 ```
 
-Documentation is available at `http://localhost:3001`.
+The documentation is available at `http://localhost:3001`. The site needs no backend, no database, and no provider credentials.
+
+After the backend contract changes, re-export the OpenAPI snapshot and regenerate the reference pages:
+
+```bash
+npm run docs:export-openapi
+npm run docs:generate
+npm run docs:validate
+```
 
 ## Quality checks
 
@@ -80,20 +143,49 @@ npm run typecheck
 npm run test
 npm run test:e2e
 npm run build
+npm audit --omit=dev
 ```
 
-Website:
+Documentation site:
 
 ```bash
 npm run lint
 npm run types:check
+npm run docs:validate
 npm run build
 ```
 
-## Stopping services
+The finance and scoring engines are tested without network, database, or LLM access. Those tests are what keep authoritative numbers reproducible.
+
+## Production build
+
+```bash
+# frontend
+npm run build && npm run start
+
+# documentation site
+npm run build && npm run start
+```
+
+The backend uses the same `Dockerfile` image for API, worker, and beat, with the OASIS runtime installed only on the worker.
+
+## Stopping the services
 
 ```bash
 docker compose down
 ```
 
-This does not delete volumes. Do not use a volume-removal option unless the local data can be discarded.
+That command does not remove volumes. Do not use the volume removal option unless the local data is genuinely disposable.
+
+## Common problems
+
+| Symptom | Usual cause |
+|---|---|
+| Database authentication fails despite correct credentials | A local PostgreSQL owns port 5432; Compose deliberately uses 5433 |
+| Analysis always finishes `partial` | Provider credentials are unset or the OASIS runtime is not installed on the worker |
+| The report contains no market figures | No market evidence provider is selected; every metric is returned as missing |
+| A run hangs on one stage | The worker is not running; start beat so runs can be reconciled |
+| The frontend cannot reach the API | `BACKEND_URL` is wrong or the origin is missing from the backend CORS allowlist |
+| Receipt upload is rejected | The extension does not match the magic bytes, the file is too large, or the pixel count exceeds the limit |
+
+The full environment variable list is in [Environment configuration](./konfigurasi).

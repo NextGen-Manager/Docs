@@ -1,6 +1,6 @@
 ---
 title: Menjalankan sistem secara lokal
-description: Panduan menyiapkan backend, worker, frontend, dan website dokumentasi pada komputer pengembang.
+description: Menyiapkan backend, database, worker, frontend, dan website dokumentasi pada komputer pengembang, termasuk migration, testing, dan production build.
 ---
 
 ## Prasyarat
@@ -8,9 +8,9 @@ description: Panduan menyiapkan backend, worker, frontend, dan website dokumenta
 - Git.
 - Docker Desktop dengan Docker Compose.
 - Node.js 22 untuk frontend dan website dokumentasi.
-- Python 3.11 dan `uv` jika backend dijalankan di luar container.
+- Python 3.11 dan [uv](https://docs.astral.sh/uv/) bila backend dijalankan di luar container.
 
-Python 3.12 atau lebih baru tidak digunakan karena `camel-oasis 0.2.5` membatasi runtime ke Python di bawah 3.12.
+Python 3.12 atau lebih baru **tidak** dipakai. `camel-oasis 0.2.5` membatasi runtime ke Python di bawah 3.12, dan menaikkannya akan merusak simulasi.
 
 ## Mengkloning repository
 
@@ -20,9 +20,11 @@ git clone https://github.com/NextGen-Manager/SimuMarketAI-BE.git
 git clone https://github.com/NextGen-Manager/Docs.git
 ```
 
-Gunakan branch yang kompatibel pada setiap repository. Jangan mencampur frontend dan backend dari kontrak yang berbeda.
+Gunakan branch yang kompatibel pada setiap repository. Jangan mencampur frontend dan backend dari kontrak API yang berbeda.
 
-## Menjalankan backend dengan Docker
+## Backend melalui Docker Compose
+
+Cara tercepat menjalankan seluruh dependency sekaligus.
 
 ```bash
 cd SimuMarketAI-BE
@@ -30,23 +32,76 @@ docker compose up --build -d
 docker compose exec api uv run alembic upgrade head
 ```
 
-Compose menjalankan API, worker, beat, PostgreSQL 16, Redis 7, dan MinIO. API tersedia pada `http://localhost:8000`.
+Compose menjalankan enam service:
+
+| Service | Fungsi | Port host |
+|---|---|---|
+| `api` | FastAPI | 8000 |
+| `worker` | Celery worker untuk queue `analysis` dan `artifacts` | |
+| `beat` | Celery beat untuk recovery dan retention terjadwal | |
+| `postgres` | PostgreSQL 16 dengan pgvector | 5433 |
+| `redis` | Redis 7 | 6379 |
+| `minio` | Object storage S3-compatible | 9000 dan 9001 |
+
+PostgreSQL dipetakan ke port 5433 pada host karena PostgreSQL yang terpasang lokal biasanya sudah memakai 5432, dan bentroknya muncul sebagai kegagalan autentikasi yang membingungkan.
+
+Periksa hasilnya:
 
 ```bash
 curl http://localhost:8000/v1/health
 curl http://localhost:8000/v1/ready
 ```
 
+`health` memeriksa proses API. `ready` memeriksa dependency penting. Dokumentasi OpenAPI tersedia di `http://localhost:8000/docs` dan console MinIO di `http://localhost:9001`.
+
+## Backend tanpa container
+
+Jalankan dependency saja melalui Compose, lalu API pada host.
+
+```bash
+cd SimuMarketAI-BE
+docker compose up -d postgres redis minio
+uv sync --all-groups
+cp .env.example .env
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
+```
+
+Pada PowerShell gunakan `Copy-Item .env.example .env` untuk menyalin konfigurasi. Jangan commit `.env`.
+
+Runtime OASIS adalah optional dependency dan hanya dipasang pada worker. Tanpa runtime tersebut, dan tanpa kredensial provider, pipeline analysis tetap berjalan lalu selesai berstatus `partial` dengan bagian simulasi dinyatakan tidak tersedia. Sistem tidak membuat output agent palsu.
+
+## Migration database
+
+```bash
+uv run alembic upgrade head     # menerapkan migration
+uv run alembic check            # memastikan model dan migration sinkron
+uv run alembic downgrade -1     # membatalkan satu revision
+```
+
+Migration dijalankan satu kali sebelum traffic memakai schema baru. API dan worker harus memakai revision aplikasi yang sama.
+
+## Celery worker dan beat
+
+Dengan Compose keduanya sudah berjalan. Untuk menjalankan manual:
+
+```bash
+uv run celery -A app.workers.celery_app worker --loglevel=info --queues=analysis,artifacts --concurrency=1
+uv run celery -A app.workers.celery_app beat --loglevel=info
+```
+
+Concurrency satu adalah pilihan sadar: satu run memegang budget provider, dan prefetch task kedua hanya membuat umur antrean sulit dibaca. Beat diperlukan agar run yang dispatch-nya gagal atau worker-nya mati tidak menggantung selamanya; tidak ada mekanisme di Celery yang dapat menyadari task yang tidak pernah tiba.
+
 ## Frontend
 
 ```bash
 cd SimuMarketAI
-npm install
-copy .env.example .env.local
+npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-Frontend tersedia pada `http://localhost:3000`. `BACKEND_URL` digunakan route proxy server-side agar browser memakai same-origin API path.
+Frontend tersedia pada `http://localhost:3000`. `BACKEND_URL` dipakai route proxy server-side sehingga browser memanggil API melalui path same-origin dan tidak menyentuh backend secara langsung.
 
 ## Website dokumentasi
 
@@ -58,7 +113,15 @@ npm install
 npm run dev -- --port 3001
 ```
 
-Dokumentasi tersedia pada `http://localhost:3001`.
+Dokumentasi tersedia pada `http://localhost:3001`. Website tidak membutuhkan backend, database, atau kredensial provider.
+
+Setelah kontrak backend berubah, ekspor ulang snapshot OpenAPI lalu bangkitkan halaman referensi:
+
+```bash
+npm run docs:export-openapi
+npm run docs:generate
+npm run docs:validate
+```
 
 ## Pemeriksaan kualitas
 
@@ -80,15 +143,31 @@ npm run typecheck
 npm run test
 npm run test:e2e
 npm run build
+npm audit --omit=dev
 ```
 
-Website:
+Website dokumentasi:
 
 ```bash
 npm run lint
 npm run types:check
+npm run docs:validate
 npm run build
 ```
+
+Engine finance dan scoring diuji tanpa jaringan, tanpa database, dan tanpa LLM. Test itu yang menjaga angka otoritatif tetap dapat direproduksi.
+
+## Production build
+
+```bash
+# frontend
+npm run build && npm run start
+
+# website dokumentasi
+npm run build && npm run start
+```
+
+Backend memakai image dari `Dockerfile` yang sama untuk API, worker, dan beat, dengan runtime OASIS hanya dipasang pada worker.
 
 ## Menghentikan layanan
 
@@ -97,3 +176,16 @@ docker compose down
 ```
 
 Perintah tersebut tidak menghapus volume. Jangan memakai opsi penghapusan volume kecuali data lokal memang boleh dibuang.
+
+## Masalah yang sering muncul
+
+| Gejala | Penyebab yang biasa |
+|---|---|
+| Autentikasi database gagal padahal kredensial benar | PostgreSQL lokal memakai port 5432; Compose sengaja memakai 5433 |
+| Analysis selalu selesai `partial` | Kredensial provider belum diisi atau runtime OASIS tidak terpasang pada worker |
+| Laporan tidak memuat angka pasar | Provider evidence pasar belum dipilih; seluruh metric dikembalikan sebagai missing |
+| Run menggantung pada satu stage | Worker tidak berjalan; jalankan beat agar run dapat direkonsiliasi |
+| Frontend tidak dapat memanggil API | `BACKEND_URL` salah atau origin belum ada pada allowlist CORS backend |
+| Upload struk ditolak | Ekstensi tidak cocok dengan magic bytes, ukuran terlalu besar, atau jumlah pixel melewati batas |
+
+Daftar variabel environment lengkap ada pada [Konfigurasi environment](./konfigurasi).
