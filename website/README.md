@@ -52,10 +52,10 @@ Tambahkan tiga repository secret di GitHub melalui **Settings > Secrets and vari
 - `VERCEL_ORG_ID`: nilai `orgId` proyek.
 - `VERCEL_PROJECT_ID`: nilai `projectId` proyek.
 
-Untuk memperoleh dua ID terakhir, link proyek sekali dari direktori `website`:
+Untuk memperoleh dua ID terakhir, jalankan link sekali dari root repository `Docs`. Perintah Vercel harus dijalankan dari root repository karena Root Directory proyek sudah bernilai `website`:
 
 ```bash
-npx vercel link
+npx vercel link --scope trs-projects-87dbd85a --project simumarket-docs
 ```
 
 Baca `orgId` dan `projectId` dari `.vercel/project.json`. Direktori `.vercel` sudah diabaikan Git dan tidak boleh di-commit. Setelah secrets tersedia, jalankan workflow secara manual atau push perubahan berikutnya ke `main`.

@@ -20,9 +20,6 @@ jobs:
   verify-and-deploy:
     name: Verify and deploy to Vercel
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -40,18 +37,23 @@ jobs:
           cache-dependency-path: website/package-lock.json
 
       - name: Install dependencies
+        working-directory: website
         run: npm ci
 
       - name: Validate public content
+        working-directory: website
         run: npm run docs:validate
 
       - name: Lint
+        working-directory: website
         run: npm run lint
 
       - name: Type check
+        working-directory: website
         run: npm run types:check
 
       - name: Build Next.js website
+        working-directory: website
         run: npm run build
 
       - name: Check Vercel configuration
@@ -69,10 +71,6 @@ jobs:
         if: steps.vercel.outputs.configured == 'true'
         run: npx --yes vercel@58.9.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
 
-      - name: Build Vercel artifact
+      - name: Deploy production
         if: steps.vercel.outputs.configured == 'true'
-        run: npx --yes vercel@58.9.0 build --prod --token="$VERCEL_TOKEN"
-
-      - name: Deploy production artifact
-        if: steps.vercel.outputs.configured == 'true'
-        run: npx --yes vercel@58.9.0 deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
+        run: npx --yes vercel@58.9.0 deploy --yes --prod --token="$VERCEL_TOKEN"
