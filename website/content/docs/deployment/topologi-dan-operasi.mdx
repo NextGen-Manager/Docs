@@ -43,7 +43,6 @@ API dan worker harus memakai revision aplikasi yang sama. Migration dijalankan s
 - Jangan menaruh secret pada variable `NEXT_PUBLIC_*`, repository, image, log, atau dokumentasi.
 - Bucket receipt dan export bersifat privat; akses browser hanya melalui signed URL berumur pendek.
 - OASIS trace dan foto struk mempunyai retention job serta tidak boleh ikut backup publik.
-- Produksi tanpa Gemini key harus melaporkan provider unavailable, bukan mengaktifkan fake adapter.
 
 ## Health dan observability
 
@@ -55,7 +54,7 @@ Correlation ID mengikuti request, event, task, dan log. Log tidak memuat cookie,
 
 1. Buka dokumentasi pada kedua locale dan uji language switch.
 2. Uji register, login, refresh, dan logout dengan cookie production.
-3. Jalankan analysis tanpa mengasumsikan provider tersedia; periksa `partial` dan warning.
+3. Jalankan analysis dan periksa status, hasil, serta warning yang ditampilkan.
 4. Uji reconnect SSE dengan `Last-Event-ID`.
 5. Upload fixture struk non-pribadi, review draft, confirm sekali, dan periksa idempotency.
 6. Buat PDF, unduh melalui signed URL, lalu pastikan expiry dan tenant isolation bekerja.

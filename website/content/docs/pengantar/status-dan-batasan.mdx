@@ -5,12 +5,12 @@ description: Cara membaca implementasi, demo, unavailable integration, dan hasil
 
 Dokumentasi ini sengaja tidak menyamakan prototype, implementasi, dan validasi produksi.
 
-## Yang sudah tersedia pada baseline
+## Yang sudah tersedia
 
 - Authentication, session rotation, multi-business membership, dan role owner/cashier.
 - Usaha, produk, transaksi manual dan batch, dashboard, serta transaction analytics.
 - Edukasi dan prerequisite gate.
-- Analysis pipeline asynchronous, SSE, recovery lease, deterministic finance, scoring, report, dan fake OASIS adapter.
+- Analysis pipeline asynchronous, SSE, recovery lease, deterministic finance, scoring, dan report.
 - Receipt upload privat, preprocessing, PaddleOCR adapter, review draft, koreksi, dan confirm idempotent.
 - PDF report dan transaction summary melalui background worker serta signed download URL.
 
@@ -19,7 +19,6 @@ Dokumentasi ini sengaja tidak menyamakan prototype, implementasi, dan validasi p
 - Provider evidence pasar produksi belum dipilih. Runtime produksi dapat menghasilkan missing evidence dan laporan `partial`.
 - Rule `lrs-v0.2-unvalidated` memakai bobot 20/25/15/40, tetapi threshold dan kualitas model masih membutuhkan expert review serta calibration.
 - Akurasi PaddleOCR pada dataset struk UMKM Indonesia belum melalui evaluasi pilot representatif.
-- Adapter Gemini live belum diuji end-to-end karena API key belum tersedia. Fake adapter bukan bukti kualitas model live.
 - Beberapa integrasi dan tampilan tetap menggunakan seed data untuk demo.
 
 ## Memahami `partial`
@@ -29,4 +28,3 @@ Dokumentasi ini sengaja tidak menyamakan prototype, implementasi, dan validasi p
 ## Simulasi bukan survei lapangan
 
 Synthetic persona membantu menguji reaksi terhadap skenario secara terstruktur. Hasilnya bukan representasi statistik seluruh masyarakat Jabodetabek dan tidak menggantikan wawancara, observasi, atau evidence pasar langsung.
-

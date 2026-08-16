@@ -7,7 +7,7 @@ description: Provenance, money formulas, the Launch Readiness Score, and confide
 
 Every market number requires a metric, value, unit, geography, source, observation time, retrieval time, quality, and limitations. Missing evidence remains missing instead of being replaced by an LLM-generated value.
 
-The production runtime currently uses an unavailable evidence provider. The fixture provider exists only in tests and is rejected in staging and production. A run without a market provider can therefore finish as `partial`, with affected dimensions marked `not_scorable`.
+If required evidence is unavailable, a run can finish as `partial`, with affected dimensions marked `not_scorable`.
 
 ## Deterministic finance
 

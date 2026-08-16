@@ -20,13 +20,8 @@ Finance dan scoring berjalan dari typed input terlepas dari keberhasilan agent. 
 
 Hanya `SimulationRequest` terstruktur yang dapat keluar menuju provider. ID di-hash dengan salt. Email, telepon, dan URL pada free text direduksi. Nama pelanggan, nomor telepon, teks struk mentah, dan catatan bebas tidak pernah menjadi prompt provider.
 
-## Adapter
+## Integrasi provider
 
-- `live` memakai CAMEL/OASIS dan Gemini secara lazy-loaded.
-- `fake` menghasilkan artifact deterministik untuk test dan ditolak pada staging/production.
-- `unavailable` mencatat alasan provider tidak dapat dipakai.
-
-Ketiga adapter melewati validator artifact yang sama. Pada baseline ini, live Gemini belum diverifikasi tanpa API key.
+Integrasi CAMEL/OASIS dan provider model dimuat melalui adapter. Setiap artifact yang dihasilkan tetap melewati validator yang sama sebelum dapat digunakan oleh report.
 
 Referensi framework: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
-

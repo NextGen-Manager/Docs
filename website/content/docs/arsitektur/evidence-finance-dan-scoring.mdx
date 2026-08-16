@@ -7,7 +7,7 @@ description: Provenance, formula uang, Launch Readiness Score, dan confidence.
 
 Setiap angka pasar membutuhkan metric, value, unit, geography, source, waktu observasi, waktu retrieval, quality, dan limitation. Missing evidence dinyatakan sebagai missing, bukan diganti angka dari LLM.
 
-Runtime produksi saat ini memakai unavailable evidence provider. Fixture provider hanya tersedia pada test dan ditolak pada staging/production. Karena itu, run tanpa provider pasar dapat selesai `partial` dan dimension terkait menjadi `not_scorable`.
+Jika evidence yang diperlukan tidak tersedia, run dapat selesai `partial` dan dimension terkait menjadi `not_scorable`.
 
 ## Finance deterministik
 
@@ -36,4 +36,3 @@ Rule aktif adalah `lrs-v0.2-unvalidated`. Dimension tanpa evidence tidak menerim
 ## Confidence terpisah
 
 Evidence Confidence menilai source quality, freshness, geographic fit, sample sufficiency, dan cross-source consistency. Confidence tidak menaikkan atau menurunkan score secara tersembunyi. Keduanya ditampilkan berdampingan dengan missing evidence serta limitation.
-

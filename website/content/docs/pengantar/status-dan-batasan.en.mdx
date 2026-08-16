@@ -5,12 +5,12 @@ description: How to interpret implementation, demo content, unavailable integrat
 
 This documentation deliberately distinguishes prototypes, implementation, and production validation.
 
-## Available in the audited baseline
+## Available capabilities
 
 - Authentication, session rotation, multi-business membership, and owner/cashier roles.
 - Businesses, products, manual and batch transactions, dashboard, and transaction analytics.
 - Education and its prerequisite gate.
-- Asynchronous analysis pipeline, SSE, recovery leases, deterministic finance, scoring, reporting, and the fake OASIS adapter.
+- Asynchronous analysis pipeline, SSE, recovery leases, deterministic finance, scoring, and reporting.
 - Private receipt upload, preprocessing, PaddleOCR adapter, draft review, correction, and idempotent confirmation.
 - PDF reports and transaction summaries through a background worker and signed download URLs.
 
@@ -19,7 +19,6 @@ This documentation deliberately distinguishes prototypes, implementation, and pr
 - The production market-evidence provider has not been selected. Production can produce missing evidence and a `partial` report.
 - Rule set `lrs-v0.2-unvalidated` uses 20/25/15/40 weights, but thresholds and model quality still require expert review and calibration.
 - PaddleOCR accuracy has not been evaluated on a representative pilot dataset of Indonesian MSME receipts.
-- The live Gemini adapter has not been tested end to end because an API key is unavailable. The fake adapter does not prove live-model quality.
 - Some integrations and screens still use seed data for demonstrations.
 
 ## Understanding `partial`

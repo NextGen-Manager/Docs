@@ -20,13 +20,8 @@ Finance and scoring execute from typed inputs regardless of agent success. A cou
 
 Only a structured `SimulationRequest` may leave for the provider. IDs are salted and hashed. Email addresses, phone numbers, and URLs in free text are redacted. Customer names, phone numbers, raw receipt text, and free-form notes never enter provider prompts.
 
-## Adapters
+## Provider integration
 
-- `live` lazily loads CAMEL/OASIS and Gemini.
-- `fake` produces deterministic test artifacts and is rejected in staging or production.
-- `unavailable` records why a provider cannot be used.
-
-All adapters pass through the same artifact validators. In this baseline, live Gemini has not been verified without an API key.
+CAMEL/OASIS and model providers are loaded through an adapter. Every generated artifact passes through the same validators before it can be used in a report.
 
 Framework reference: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
-

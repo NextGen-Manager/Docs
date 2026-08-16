@@ -20,7 +20,7 @@ git clone https://github.com/NextGen-Manager/SimuMarketAI-BE.git
 git clone https://github.com/NextGen-Manager/Docs.git
 ```
 
-Use the team-approved baseline branches. Do not combine frontend and backend revisions with incompatible contracts.
+Use compatible branches across the repositories. Do not combine frontend and backend revisions with incompatible contracts.
 
 ## Complete backend through Docker
 
@@ -36,8 +36,6 @@ Compose runs the API, worker, beat, PostgreSQL 16, Redis 7, and MinIO. The API i
 curl http://localhost:8000/v1/health
 curl http://localhost:8000/v1/ready
 ```
-
-Without `GEMINI_API_KEY`, analysis does not fabricate agent output. The live adapter becomes unavailable and a report may finish as `partial`. Tests use a fake adapter that can only be injected in non-protected environments.
 
 ## Frontend
 
@@ -99,4 +97,3 @@ docker compose down
 ```
 
 This does not delete volumes. Do not use a volume-removal option unless the local data can be discarded.
-

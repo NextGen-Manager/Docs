@@ -43,7 +43,6 @@ The API and workers must use the same application revision. Run migrations once 
 - Never put secrets in `NEXT_PUBLIC_*` variables, repositories, images, logs, or documentation.
 - Receipt and export buckets remain private; browsers access them only through short-lived signed URLs.
 - OASIS traces and receipt images have retention jobs and must never enter public backups.
-- Production without a Gemini key must report the provider as unavailable, never enable the fake adapter.
 
 ## Health and observability
 
@@ -55,7 +54,7 @@ A correlation ID follows requests, events, tasks, and logs. Logs exclude cookies
 
 1. Open both documentation locales and test the language switch.
 2. Test register, login, refresh, and logout with production cookies.
-3. Run an analysis without assuming the provider is available; inspect `partial` and warnings.
+3. Run an analysis and inspect the displayed status, results, and warnings.
 4. Test SSE reconnection with `Last-Event-ID`.
 5. Upload a non-private receipt fixture, review the draft, confirm once, and verify idempotency.
 6. Create a PDF, download it through a signed URL, then verify expiry and tenant isolation.
