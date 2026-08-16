@@ -1,0 +1,28 @@
+---
+title: Design system
+description: Visual tokens, component patterns, accessibility, and interface copy rules.
+---
+
+SimuMarket AI uses Montserrat and a warm editorial direction: light surfaces, dark text, orange accents, soft radii, and clear hierarchy. Tokens in `src/app/globals.css` are the implementation source; colors and spacing are not scattered as ad hoc values across pages.
+
+## Principles
+
+- **Clarity over decoration.** Numbers, status, evidence sources, and limitations must be easy to scan.
+- **Status never relies on color alone.** Icons and text labels accompany semantic colors.
+- **Progress reflects real state.** Animation must not invent worker progress.
+- **Errors preserve context.** User input remains intact and recovery actions are explained.
+- **Responsive by structure.** The sidebar becomes compact navigation without hiding critical actions.
+
+## Component patterns
+
+Forms use persistent labels, concise help, errors near their fields, and explicit units. Data cards include a title, value, period, source, and confidence status when relevant. Tables use headers that remain understandable without relying on visual position. Dialogs are reserved for decisions that genuinely require focus or confirmation.
+
+Analysis output separates deterministic results, agent interpretation, evidence, and limitations. A `partial`, `unavailable`, or `unvalidated` badge must never be presented as full success.
+
+## Accessibility
+
+Every interaction is keyboard accessible, focus rings are visible, touch targets are adequate, headings are ordered, and icon-only actions have accessible names. Contrast is checked for normal text and status indicators. The user's reduced-motion preference is respected.
+
+## Copy
+
+Product copy uses concise and direct Indonesian. Technical terms remain in English when translation would obscure meaning. Use ordinary punctuation, avoid guarantees of business success, and explain that recommendations are decision support.

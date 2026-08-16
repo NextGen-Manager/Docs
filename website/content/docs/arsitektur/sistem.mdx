@@ -1,0 +1,43 @@
+---
+title: Arsitektur sistem
+description: Komponen, bounded context, state, storage, dan reliability SimuMarket AI.
+---
+
+```text
+Browser Next.js
+  -> FastAPI /v1
+     -> PostgreSQL
+     -> Redis -> Celery worker
+     -> private S3-compatible storage
+     -> evidence provider
+     -> OASIS/CAMEL adapter -> Gemini
+```
+
+## Tanggung jawab komponen
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Next.js | Input, route guard, status job, dan rendering output server |
+| FastAPI | Authentication, validation, authorisation, dan use-case API |
+| PostgreSQL | System of record untuk identity, bisnis, transaksi, evidence, analysis, event, dan artifact metadata |
+| Redis | Broker Celery dan transport event, bukan system of record |
+| Worker | Analysis, OASIS, OCR, PDF, recovery, dan retention job |
+| Object storage | Foto struk dan PDF privat dengan signed URL |
+| OASIS trace | Artifact per attempt yang terisolasi dan mempunyai retention |
+
+## Analysis pipeline
+
+`POST /v1/analyses` memvalidasi input, menyimpan run `queued`, commit, lalu mengirim task. Worker mengeksekusi stage secara berurutan. State dipersist sebelum event diterbitkan. Recovery lease mencegah task yang masih hidup diambil worker lain terlalu awal.
+
+Setiap run menyimpan immutable input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, dan artifact agent.
+
+## Reliability
+
+- Idempotency mencegah transaksi, run, dan export ganda.
+- Resource tenant lain terlihat sebagai `404`.
+- SSE dapat dilanjutkan dengan `Last-Event-ID`.
+- Polling membaca snapshot otoritatif ketika SSE gagal.
+- Failure code aman dipisahkan dari trace internal.
+- Signed URL berumur pendek dan object tetap privat.
+- Retention job menghapus artifact tanpa menyamarkan kegagalan penghapusan.
+

@@ -1,0 +1,43 @@
+---
+title: Code structure and standards
+description: Repository boundaries, dependency direction, conventions, and quality gates for SimuMarket AI.
+---
+
+SimuMarket AI is split into three repositories. `Docs` is the source of truth for product and architecture, `SimuMarketAI` contains the Next.js application, and `SimuMarketAI-BE` contains FastAPI, workers, deterministic engines, and external integrations. Repositories do not import from each other.
+
+## Frontend
+
+The application uses the Next.js App Router and TypeScript. Routes live in `src/app`, feature components in `src/features`, shared components in `src/components`, and transport contracts in `src/lib/contracts`. Demo pages are isolated from real application routes so fixtures cannot be mistaken for production data.
+
+Core principles:
+
+- the server is authoritative for report and analytics numbers;
+- the frontend never recalculates scores, money, or aggregates;
+- route guards follow server-provided capabilities and membership;
+- user-facing product copy is in Indonesian;
+- small components have one responsibility and share design tokens.
+
+## Backend
+
+The backend follows the dependency direction `api -> services -> domain/repositories/integrations`. Engines under `app/engines` cannot import LLM adapters or external services. Finance and scoring formulas accept typed inputs and return deterministic results.
+
+External systems are wrapped by adapters. Repositories handle persistence and tenant scope. Services orchestrate use cases, transaction boundaries, idempotency, and state transitions. Workers execute recoverable asynchronous jobs without treating Redis as the system of record.
+
+## Important conventions
+
+| Area | Rule |
+|---|---|
+| Money | Integer rupiah, never floating point |
+| Time | UTC in persistence and APIs; locale only at rendering time |
+| Identifiers | UUIDs with no embedded business meaning |
+| Errors | Machine-readable code with a safe user message |
+| Tenant isolation | Resources outside membership return `404` |
+| Idempotency | Retry-sensitive create operations use an idempotency key |
+| Agent output | Validated structured artifacts, never free-form authority |
+| Evidence | Value, unit, geography, source, time, quality, and limitations |
+
+## Quality gates
+
+The frontend must pass linting, type checking, unit tests, end-to-end tests, builds, and production dependency audits. The backend must pass Ruff, MyPy, Pytest, Alembic migration checks, and a PostgreSQL migration round trip. Tests with the fake adapter prove orchestration, not live provider quality.
+
+Changes to public contracts, major framework versions, the OASIS boundary, scoring, or providers require an architecture decision before implementation.

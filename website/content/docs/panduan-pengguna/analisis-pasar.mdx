@@ -1,0 +1,49 @@
+---
+title: Menjalankan Market Analysis
+description: Dari edukasi dan input rencana sampai membaca laporan secara bertanggung jawab.
+---
+
+Market Analysis ditujukan untuk rencana usaha F&B di Jabodetabek. Analisis tidak terikat pada satu usaha aktif, sehingga pengguna dapat menguji konsep sebelum membuat usaha operasional.
+
+## Sebelum mulai
+
+Siapkan informasi berikut:
+
+- jenis dan nama konsep usaha;
+- titik lokasi, area, dan radius analisis;
+- harga jual rata-rata dan HPP per unit;
+- modal awal dan biaya tetap bulanan;
+- hari operasi, kapasitas, serta rentang volume harian;
+- channel penjualan dan value proposition.
+
+Semua nilai uang dikirim sebagai integer rupiah. Jika input finansial kritis hilang, sistem tidak boleh menampilkan BEP presisi seolah datanya lengkap.
+
+## Alur pengguna
+
+1. Buka **Analisis** dan isi rencana usaha.
+2. Sistem memeriksa prerequisite edukasi yang relevan.
+3. Selesaikan modul yang masih diwajibkan.
+4. Kirim analisis. API membuat run berstatus `queued` dan segera mengembalikan kontrol.
+5. Halaman progress menerima event SSE. Jika koneksi SSE gagal, frontend melakukan polling snapshot setiap tiga detik.
+6. Buka laporan setelah run mencapai keadaan terminal.
+
+State utama adalah `queued`, `collecting_evidence`, `building_context`, `simulating`, `calculating_finance`, `scoring`, `composing_report`, dan `validating_report`. Setiap transisi disimpan ke PostgreSQL sebelum dipublikasikan melalui Redis.
+
+## Membaca laporan
+
+Jangan membaca score tanpa bagian lain. Periksa bersama-sama:
+
+- Launch Readiness Score dan `rule_version`;
+- status setiap dimension;
+- Evidence Confidence dan missing evidence;
+- asumsi finance, BEP, revenue, profit, dan payback;
+- risiko, limitation, dan rekomendasi;
+- status synthetic simulation;
+- disclaimer.
+
+Interpretasi score aktif adalah sangat layak mulai 80, layak dengan mitigasi mulai 65, perlu evaluasi ulang mulai 50, dan tidak disarankan di bawah 50. Rentang dan threshold rule tetap berstatus `unvalidated` sampai expert review serta calibration selesai.
+
+## Ketika hasil `partial`
+
+Laporan parsial masih dapat memuat finance atau evidence yang valid. Bagian yang gagal tetap terlihat sebagai `unavailable`. Jangan menyimpulkan score yang tidak tersedia dan jangan menganggap synthetic persona sebagai survei pasar.
+

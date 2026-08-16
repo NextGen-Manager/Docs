@@ -1,0 +1,39 @@
+---
+title: Ringkasan keputusan arsitektur
+description: Keputusan yang menjaga konsistensi framework, scoring, dan boundary OASIS.
+---
+
+Architecture Decision Record (ADR) mencatat keputusan yang sulit dibalik beserta konteks dan konsekuensinya. Ringkasan ini menjelaskan keputusan aktif tanpa menerbitkan catatan kerja internal.
+
+## OASIS di belakang adapter
+
+`camel-oasis` hanya hidup pada worker dan tidak boleh diimpor oleh API, domain, atau engine deterministik. Adapter menjaga dependency yang stagnan, trace, provider, dan retry tetap berada di luar perhitungan otoritatif. Bila runtime OASIS tidak tersedia, run melaporkan limitation secara eksplisit.
+
+## Next.js 16 dan React 19
+
+Frontend memakai Next.js 16 dengan App Router dan React 19. Next.js 14 yang disebut pada rancangan awal sudah tidak menjadi baseline aktif. Perubahan major berikutnya membutuhkan review compatibility, security, build, dan deployment sebelum kode aplikasi dinaikkan.
+
+## Bobot Launch Readiness Score
+
+Rule version aktif adalah `lrs-v0.2-unvalidated` dengan bobot:
+
+| Dimensi | Bobot |
+|---|---:|
+| Market Saturation | 20% |
+| Demand Potential | 25% |
+| Price Positioning | 15% |
+| Operational Readiness | 40% |
+
+Bobot tidak boleh diubah tanpa ADR, fixture pembanding, dan validasi product owner atau pakar. Threshold aktif masih berstatus `unvalidated`; label tersebut harus ikut tampil pada output yang relevan.
+
+## Orchestrator memiliki deterministic tools
+
+Finance dan scoring bukan tool bebas milik agent. Orchestrator memanggil engine deterministik dari typed snapshot, lalu agent hanya dapat mengkritik atau menjelaskan hasilnya. Dengan boundary ini, provider LLM tidak pernah menjadi sumber skor, BEP, margin, payback, atau aggregate.
+
+Finance council hanya dapat meminta kalkulator yang sama dalam batas skenario pengguna. Permintaan volume di luar rentang input di-clamp dan dicatat. Report agent tidak dapat menyisipkan angka baru karena validator hanya menerima angka yang ada pada input, evidence, finance, atau score snapshot.
+
+## Kapan membuat keputusan baru
+
+Buat ADR sebelum mengganti major framework, mengubah boundary OASIS dan engine, mengubah bobot atau threshold scoring, mengganti evidence provider atau LLM provider, dan mengubah kontrak endpoint yang sudah digunakan frontend.
+
+Rujukan eksternal: [OASIS Introduction](https://docs.oasis.camel-ai.org/introduction), [Next.js App Router](https://nextjs.org/docs/app), dan [FastAPI OpenAPI](https://fastapi.tiangolo.com/tutorial/metadata/).

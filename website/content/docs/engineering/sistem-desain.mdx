@@ -1,0 +1,28 @@
+---
+title: Sistem desain
+description: Token visual, pola komponen, aksesibilitas, dan aturan copy antarmuka.
+---
+
+Antarmuka SimuMarket AI memakai Montserrat dan pendekatan warm editorial: permukaan terang, teks gelap, aksen oranye, radius lembut, serta hierarchy yang jelas. Token di `src/app/globals.css` adalah sumber implementasi; warna atau spacing tidak disebar sebagai nilai ad hoc di setiap halaman.
+
+## Prinsip
+
+- **Kejelasan lebih penting dari dekorasi.** Angka, status, sumber evidence, dan limitation harus mudah dipindai.
+- **Status tidak bergantung pada warna.** Ikon dan label teks selalu menyertai semantic color.
+- **Progress menunjukkan state nyata.** Animasi tidak boleh mengarang kemajuan worker.
+- **Error menjaga konteks.** Input pengguna dipertahankan dan aksi pemulihan dijelaskan.
+- **Responsive sejak struktur.** Sidebar berubah menjadi navigasi ringkas tanpa menyembunyikan aksi penting.
+
+## Pola komponen
+
+Form menggunakan label persisten, bantuan singkat, error dekat field, serta unit yang eksplisit. Data card mempunyai judul, nilai, periode, sumber, dan status confidence bila relevan. Tabel mempunyai header yang dapat dipahami tanpa mengandalkan posisi visual saja. Dialog dipakai hanya untuk keputusan yang benar-benar membutuhkan fokus atau konfirmasi.
+
+Output analysis memisahkan hasil deterministik, interpretasi agent, evidence, dan limitation. Badge `partial`, `unavailable`, atau `unvalidated` tidak boleh disamarkan sebagai sukses penuh.
+
+## Aksesibilitas
+
+Semua interaksi dapat dijalankan dengan keyboard, focus ring terlihat, target sentuh memadai, heading berurutan, dan icon-only action memiliki accessible name. Kontras diperiksa untuk teks biasa maupun status. Pengurangan gerak dari sistem pengguna dihormati.
+
+## Copy
+
+Teks produk memakai Bahasa Indonesia yang singkat dan langsung. Istilah teknis dipertahankan bila terjemahan justru mengaburkan makna. Gunakan tanda baca biasa, hindari janji kepastian bisnis, serta jelaskan bahwa rekomendasi adalah decision support.

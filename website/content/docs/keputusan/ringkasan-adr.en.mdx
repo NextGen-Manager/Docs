@@ -1,0 +1,39 @@
+---
+title: Architecture decision summary
+description: Decisions that preserve framework, scoring, and OASIS boundary consistency.
+---
+
+Architecture Decision Records capture difficult-to-reverse decisions with their context and consequences. This summary explains active decisions without publishing internal working notes.
+
+## OASIS behind an adapter
+
+`camel-oasis` runs only in the worker and cannot be imported by the API, domain, or deterministic engines. The adapter keeps a stagnant dependency, traces, providers, and retries outside authoritative calculations. When the OASIS runtime is unavailable, the run reports the limitation explicitly.
+
+## Next.js 16 and React 19
+
+The frontend uses Next.js 16 with the App Router and React 19. Next.js 14 from the initial design is no longer the active baseline. A future major upgrade requires compatibility, security, build, and deployment review before application code is upgraded.
+
+## Launch Readiness Score weights
+
+The active rule version is `lrs-v0.2-unvalidated` with these weights:
+
+| Dimension | Weight |
+|---|---:|
+| Market Saturation | 20% |
+| Demand Potential | 25% |
+| Price Positioning | 15% |
+| Operational Readiness | 40% |
+
+Weights cannot change without an ADR, comparison fixtures, and product-owner or expert validation. Active thresholds remain `unvalidated`; that label must accompany relevant output.
+
+## The orchestrator owns deterministic tools
+
+Finance and scoring are not unrestricted agent tools. The orchestrator calls deterministic engines from typed snapshots, while agents can only critique or explain the result. This boundary prevents the LLM provider from becoming the source of scores, BEP, margins, payback, or aggregates.
+
+The finance council can only request the same calculator within the user's scenario bounds. Volume requests outside the input range are clamped and recorded. The report agent cannot insert new numbers because validation accepts only numbers present in input, evidence, finance, or score snapshots.
+
+## When a new decision is required
+
+Create an ADR before changing a major framework, the OASIS-engine boundary, scoring weights or thresholds, an evidence or LLM provider, or an endpoint contract already consumed by the frontend.
+
+External references: [OASIS Introduction](https://docs.oasis.camel-ai.org/introduction), [Next.js App Router](https://nextjs.org/docs/app), and [FastAPI OpenAPI](https://fastapi.tiangolo.com/tutorial/metadata/).

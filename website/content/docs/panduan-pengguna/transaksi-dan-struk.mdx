@@ -1,0 +1,44 @@
+---
+title: Produk, transaksi, dan foto struk
+description: Mencatat penjualan manual atau melalui review hasil OCR.
+---
+
+Transaction Management memakai satu master produk dan satu bentuk transaksi final. Input manual, batch, dan foto struk harus berakhir pada record transaksi yang tervalidasi backend.
+
+## Menyiapkan produk
+
+Owner membuat produk dengan nama, harga jual, dan data biaya yang diizinkan. Cashier dapat membaca produk aktif beserta harga jual untuk mencatat transaksi, tetapi tidak dapat melihat HPP, margin, atau mengubah produk.
+
+## Transaksi manual
+
+1. Pilih usaha dan produk.
+2. Isi jumlah, waktu, dan channel.
+3. Konfirmasi transaksi.
+4. Backend menghitung `line_total_idr` dan `gross_total_idr`.
+
+Frontend tidak menjadi kalkulator uang otoritatif. `client_reference` dapat dipakai untuk membuat retry jaringan idempotent dalam satu usaha.
+
+## Mengimpor foto struk
+
+1. Pilih usaha dan file JPEG atau PNG.
+2. Browser menghitung SHA-256, lalu meminta signed upload URL.
+3. File diunggah langsung ke private object storage.
+4. Backend memverifikasi magic bytes, ukuran, checksum, pixel limit, dan image decoding. Metadata EXIF dibuang saat sanitization.
+5. Worker menjalankan preprocessing dan PaddleOCR.
+6. Pengguna membandingkan gambar dengan draft, memperbaiki field, dan mencocokkan setiap item ke produk.
+7. Jika jumlah item berbeda dari total struk, pengguna harus menerima mismatch secara eksplisit.
+8. Confirm membuat transaksi sekali dalam database transaction yang atomic.
+
+OCR tidak pernah membuat transaksi final tanpa review manusia. Confirmation idempotent mengembalikan transaksi yang sama bila permintaan diulang.
+
+## Analytics
+
+Analytics baru berstatus `available` setelah transaksi mencakup tujuh tanggal lokal berbeda. Sebelumnya status adalah `collecting` dan list agregat tetap kosong. Produk yang belum memiliki exposure minimum tidak dipilih sebagai produk terbawah.
+
+Setiap insight membawa observation window, timezone `Asia/Jakarta`, `rule_version`, dan limitation. Volume rendah saja tidak cukup untuk merekomendasikan penghapusan produk.
+
+## Export
+
+Owner dapat meminta PDF laporan analisis atau ringkasan transaksi. Job berjalan asynchronous. Download menggunakan signed URL yang berumur pendek dan artifact mengikuti retention policy.
+
+Referensi OCR: [PP-StructureV3](https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PP-StructureV3.html). Penggunaan engine tersebut tidak menggantikan kalibrasi pada dataset struk UMKM Indonesia.

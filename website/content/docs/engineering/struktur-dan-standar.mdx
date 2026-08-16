@@ -1,0 +1,43 @@
+---
+title: Struktur kode dan standar
+description: Batas repository, dependency direction, convention, dan quality gate SimuMarket AI.
+---
+
+SimuMarket AI dipisahkan menjadi tiga repository. `Docs` adalah sumber kebenaran produk dan arsitektur, `SimuMarketAI` berisi aplikasi Next.js, sedangkan `SimuMarketAI-BE` berisi FastAPI, worker, engine deterministik, dan integrasi eksternal. Tidak ada import lintas repository.
+
+## Frontend
+
+Kode aplikasi menggunakan Next.js App Router dan TypeScript. Route berada di `src/app`, komponen fitur di `src/features`, komponen lintas fitur di `src/components`, dan kontrak transport di `src/lib/contracts`. Halaman demo diisolasi dari route aplikasi nyata agar fixture tidak dapat terbaca sebagai data produksi.
+
+Prinsip utamanya:
+
+- server adalah sumber angka laporan dan analytics;
+- frontend tidak menghitung ulang skor, uang, atau aggregate;
+- route guard mengikuti capability dan membership dari server;
+- teks pengguna berbahasa Indonesia;
+- komponen kecil menangani satu tanggung jawab dan memakai token desain bersama.
+
+## Backend
+
+Backend memakai dependency direction `api -> services -> domain/repositories/integrations`. Engine di `app/engines` tidak boleh mengimpor adapter LLM atau layanan eksternal. Formula finansial dan scoring menerima typed input serta mengembalikan hasil deterministik.
+
+Integrasi eksternal dibungkus adapter. Repository menangani persistence dan tenant scope. Service mengorkestrasi use case, transaction boundary, idempotency, serta state transition. Worker menjalankan pekerjaan async yang dapat dipulihkan tanpa menjadikan Redis sebagai system of record.
+
+## Convention penting
+
+| Area | Aturan |
+|---|---|
+| Uang | Integer rupiah, bukan floating point |
+| Waktu | UTC pada persistence dan API; locale hanya saat rendering |
+| Identifier | UUID dan tidak mempunyai makna bisnis |
+| Error | Machine-readable code dengan pesan aman untuk pengguna |
+| Tenant isolation | Resource di luar membership dikembalikan sebagai `404` |
+| Idempotency | Operasi create yang sensitif terhadap retry memakai idempotency key |
+| Agent output | Structured artifact tervalidasi, bukan free-form authority |
+| Evidence | Nilai, unit, geography, sumber, waktu, quality, limitation |
+
+## Quality gate
+
+Frontend harus lolos lint, typecheck, unit test, end-to-end test, build, dan production dependency audit. Backend harus lolos Ruff, MyPy, Pytest, pemeriksaan migration Alembic, serta migration round-trip pada PostgreSQL. Test dengan fake adapter membuktikan orkestrasi, bukan kualitas provider live.
+
+Perubahan kontrak publik, major framework, boundary OASIS, scoring, atau provider membutuhkan keputusan arsitektur sebelum implementasi.

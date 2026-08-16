@@ -1,0 +1,102 @@
+---
+title: Menjalankan sistem end-to-end
+description: Setup backend, worker, frontend, dan website dokumentasi pada environment lokal.
+---
+
+## Prasyarat
+
+- Git.
+- Docker Desktop dengan Docker Compose.
+- Node.js 22 untuk frontend dan website dokumentasi.
+- Python 3.11 dan `uv` jika backend dijalankan di luar container.
+
+Python 3.12 atau lebih baru tidak digunakan karena `camel-oasis 0.2.5` membatasi runtime ke Python di bawah 3.12.
+
+## Clone repository
+
+```bash
+git clone https://github.com/NextGen-Manager/SimuMarketAI.git
+git clone https://github.com/NextGen-Manager/SimuMarketAI-BE.git
+git clone https://github.com/NextGen-Manager/Docs.git
+```
+
+Gunakan branch baseline yang disepakati tim. Jangan mencampur frontend dan backend dari kontrak yang berbeda.
+
+## Backend lengkap melalui Docker
+
+```bash
+cd SimuMarketAI-BE
+docker compose up --build -d
+docker compose exec api uv run alembic upgrade head
+```
+
+Compose menjalankan API, worker, beat, PostgreSQL 16, Redis 7, dan MinIO. API tersedia pada `http://localhost:8000`.
+
+```bash
+curl http://localhost:8000/v1/health
+curl http://localhost:8000/v1/ready
+```
+
+Tanpa `GEMINI_API_KEY`, analysis tidak membuat output agent palsu. Adapter live menjadi unavailable dan report dapat selesai `partial`. Test memakai fake adapter yang hanya dapat diinjeksi pada environment non-protected.
+
+## Frontend
+
+```bash
+cd SimuMarketAI
+npm install
+copy .env.example .env.local
+npm run dev
+```
+
+Frontend tersedia pada `http://localhost:3000`. `BACKEND_URL` digunakan route proxy server-side agar browser memakai same-origin API path.
+
+## Website dokumentasi
+
+Gunakan port berbeda ketika frontend utama sedang berjalan.
+
+```bash
+cd Docs/website
+npm install
+npm run dev -- --port 3001
+```
+
+Dokumentasi tersedia pada `http://localhost:3001`.
+
+## Quality checks
+
+Backend:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app
+uv run pytest
+uv run alembic check
+```
+
+Frontend:
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:e2e
+npm run build
+```
+
+Website:
+
+```bash
+npm run lint
+npm run types:check
+npm run build
+```
+
+## Menghentikan service
+
+```bash
+docker compose down
+```
+
+Perintah tersebut tidak menghapus volume. Jangan memakai opsi penghapusan volume kecuali data lokal memang boleh dibuang.
+

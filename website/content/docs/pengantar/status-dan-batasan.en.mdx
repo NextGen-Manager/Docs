@@ -1,0 +1,31 @@
+---
+title: Status and limitations
+description: How to interpret implementation, demo content, unavailable integrations, and partial results.
+---
+
+This documentation deliberately distinguishes prototypes, implementation, and production validation.
+
+## Available in the audited baseline
+
+- Authentication, session rotation, multi-business membership, and owner/cashier roles.
+- Businesses, products, manual and batch transactions, dashboard, and transaction analytics.
+- Education and its prerequisite gate.
+- Asynchronous analysis pipeline, SSE, recovery leases, deterministic finance, scoring, reporting, and the fake OASIS adapter.
+- Private receipt upload, preprocessing, PaddleOCR adapter, draft review, correction, and idempotent confirmation.
+- PDF reports and transaction summaries through a background worker and signed download URLs.
+
+## Not ready for a completed claim
+
+- The production market-evidence provider has not been selected. Production can produce missing evidence and a `partial` report.
+- Rule set `lrs-v0.2-unvalidated` uses 20/25/15/40 weights, but thresholds and model quality still require expert review and calibration.
+- PaddleOCR accuracy has not been evaluated on a representative pilot dataset of Indonesian MSME receipts.
+- The live Gemini adapter has not been tested end to end because an API key is unavailable. The fake adapter does not prove live-model quality.
+- Some integrations and screens still use seed data for demonstrations.
+
+## Understanding `partial`
+
+`partial` means valid deterministic sections can still be shown while another component is unavailable. The failed section stays visible with a safe explanation. The system does not invent defaults, silently redistribute weights, or relabel the run as `completed`.
+
+## Simulation is not field research
+
+Synthetic personas help test structured reactions to scenarios. They are not a statistical representation of everyone in Greater Jakarta and do not replace interviews, observations, or direct market evidence.

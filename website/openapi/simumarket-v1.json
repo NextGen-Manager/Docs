@@ -1,0 +1,6809 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SimuMarket AI API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Liveness. Deliberately touches no dependency.",
+        "operationId": "health_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Ready",
+        "description": "Readiness. Reports a failing dependency as degraded rather than hiding it.",
+        "operationId": "ready_v1_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Register",
+        "operationId": "register_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Login",
+        "operationId": "login_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_v1_auth_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_v1_auth_logout_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Me",
+        "operationId": "me_v1_me_get",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/businesses": {
+      "get": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "List Businesses",
+        "operationId": "list_businesses_v1_businesses_get",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessRead"
+                  },
+                  "title": "Response List Businesses V1 Businesses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Create Business",
+        "operationId": "create_business_v1_businesses_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/businesses/{business_id}": {
+      "put": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Update Business",
+        "operationId": "update_business_v1_businesses__business_id__put",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/businesses/{business_id}/invites": {
+      "post": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Create Invite",
+        "operationId": "create_invite_v1_businesses__business_id__invites_post",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/invites/redeem": {
+      "post": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Redeem Invite",
+        "operationId": "redeem_invite_v1_invites_redeem_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteRedeemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/businesses/{business_id}/invites/{invite_id}": {
+      "get": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Get Invite",
+        "operationId": "get_invite_v1_businesses__business_id__invites__invite_id__get",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "invite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invite Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteStatusRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Revoke Invite",
+        "operationId": "revoke_invite_v1_businesses__business_id__invites__invite_id__delete",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "invite_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invite Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/businesses/{business_id}/members/{member_user_id}": {
+      "delete": {
+        "tags": [
+          "businesses"
+        ],
+        "summary": "Remove Member",
+        "operationId": "remove_member_v1_businesses__business_id__members__member_user_id__delete",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "member_user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member User Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "List Products",
+        "operationId": "list_products_v1_products_get",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/OwnerProductRead"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CashierProductRead"
+                      }
+                    ]
+                  },
+                  "title": "Response List Products V1 Products Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Create Product",
+        "operationId": "create_product_v1_products_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerProductRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products/{product_id}": {
+      "patch": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Update Product",
+        "operationId": "update_product_v1_products__product_id__patch",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerProductRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions": {
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Create Transaction",
+        "operationId": "create_transaction_v1_transactions_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "List Transactions",
+        "operationId": "list_transactions_v1_transactions_get",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TransactionRead"
+                  },
+                  "title": "Response List Transactions V1 Transactions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/batch": {
+      "post": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Create Transaction Batch",
+        "operationId": "create_transaction_batch_v1_transactions_batch_post",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionBatchCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TransactionRead"
+                  },
+                  "title": "Response Create Transaction Batch V1 Transactions Batch Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transaction-analytics": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Transaction Analytics",
+        "operationId": "transaction_analytics_v1_transaction_analytics_get",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "tags": [
+          "operations"
+        ],
+        "summary": "Dashboard",
+        "operationId": "dashboard_v1_dashboard_get",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/education/modules": {
+      "get": {
+        "tags": [
+          "education"
+        ],
+        "summary": "List Modules",
+        "operationId": "list_modules_v1_education_modules_get",
+        "parameters": [
+          {
+            "name": "business_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "food_stall",
+                    "coffee_shop",
+                    "restaurant",
+                    "bakery",
+                    "catering",
+                    "food_truck",
+                    "cloud_kitchen",
+                    "beverage_stand"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Business Type"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EducationModuleSummary"
+                  },
+                  "title": "Response List Modules V1 Education Modules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/education/prerequisites": {
+      "get": {
+        "tags": [
+          "education"
+        ],
+        "summary": "Prerequisites",
+        "operationId": "prerequisites_v1_education_prerequisites_get",
+        "parameters": [
+          {
+            "name": "business_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "food_stall",
+                "coffee_shop",
+                "restaurant",
+                "bakery",
+                "catering",
+                "food_truck",
+                "cloud_kitchen",
+                "beverage_stand"
+              ],
+              "type": "string",
+              "title": "Business Type"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EducationPrerequisites"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/education/modules/{module_id}": {
+      "get": {
+        "tags": [
+          "education"
+        ],
+        "summary": "Get Module",
+        "operationId": "get_module_v1_education_modules__module_id__get",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Module Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EducationModuleDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/education/modules/{module_id}/complete": {
+      "post": {
+        "tags": [
+          "education"
+        ],
+        "summary": "Complete Module",
+        "operationId": "complete_module_v1_education_modules__module_id__complete_post",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Module Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EducationCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EducationCompleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analyses": {
+      "post": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Create Analysis",
+        "operationId": "create_analysis_v1_analyses_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisAccepted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "List Analyses",
+        "operationId": "list_analyses_v1_analyses_get",
+        "parameters": [
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisListItem"
+                  },
+                  "title": "Response List Analyses V1 Analyses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analyses/{analysis_id}": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis",
+        "operationId": "get_analysis_v1_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analyses/{analysis_id}/events": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Events",
+        "description": "Live progress for one run.\n\nAccess is checked before the response starts, so another tenant gets 404\nrather than an empty stream that would confirm the run exists.",
+        "operationId": "get_analysis_events_v1_analyses__analysis_id__events_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analyses/{analysis_id}/report": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Report",
+        "operationId": "get_analysis_report_v1_analyses__analysis_id__report_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipt-imports": {
+      "post": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Create Receipt Import",
+        "operationId": "create_receipt_import_v1_receipt_imports_post",
+        "parameters": [
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptImportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptImportCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipt-imports/{receipt_import_id}/complete-upload": {
+      "post": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Complete Receipt Upload",
+        "operationId": "complete_receipt_upload_v1_receipt_imports__receipt_import_id__complete_upload_post",
+        "parameters": [
+          {
+            "name": "receipt_import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Receipt Import Id"
+            }
+          },
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptImportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipt-imports/{receipt_import_id}": {
+      "get": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Get Receipt Import",
+        "operationId": "get_receipt_import_v1_receipt_imports__receipt_import_id__get",
+        "parameters": [
+          {
+            "name": "receipt_import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Receipt Import Id"
+            }
+          },
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptImportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipt-imports/{receipt_import_id}/draft": {
+      "patch": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Update Receipt Draft",
+        "operationId": "update_receipt_draft_v1_receipt_imports__receipt_import_id__draft_patch",
+        "parameters": [
+          {
+            "name": "receipt_import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Receipt Import Id"
+            }
+          },
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptDraftUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptImportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipt-imports/{receipt_import_id}/confirm": {
+      "post": {
+        "tags": [
+          "receipts"
+        ],
+        "summary": "Confirm Receipt Import",
+        "operationId": "confirm_receipt_import_v1_receipt_imports__receipt_import_id__confirm_post",
+        "parameters": [
+          {
+            "name": "receipt_import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Receipt Import Id"
+            }
+          },
+          {
+            "name": "business_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Business Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptConfirm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptConfirmResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analyses/{analysis_id}/exports": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Create Analysis Export",
+        "operationId": "create_analysis_export_v1_analyses__analysis_id__exports_post",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 120,
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisExportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transaction-exports": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Create Transaction Export",
+        "operationId": "create_transaction_export_v1_transaction_exports_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 120,
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionExportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exports/{export_id}": {
+      "get": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Get Export",
+        "operationId": "get_export_v1_exports__export_id__get",
+        "parameters": [
+          {
+            "name": "export_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Export Id"
+            }
+          },
+          {
+            "name": "simumarket_access",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Simumarket Access"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentCritiqueView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "assumption": {
+            "type": "string",
+            "title": "Assumption"
+          },
+          "concern": {
+            "type": "string",
+            "title": "Concern"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity"
+          },
+          "tool_call_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tool Call Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "assumption",
+          "concern",
+          "severity",
+          "tool_call_ids"
+        ],
+        "title": "AgentCritiqueView"
+      },
+      "AgentNarrativeSectionView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "source_artifact_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Artifact Types"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "body",
+          "source_artifact_types"
+        ],
+        "title": "AgentNarrativeSectionView"
+      },
+      "AgentObservationView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "stance": {
+            "type": "string",
+            "enum": [
+              "opportunity",
+              "risk",
+              "uncertainty"
+            ],
+            "title": "Stance"
+          },
+          "claim": {
+            "type": "string",
+            "title": "Claim"
+          },
+          "evidence_metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Metrics"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "stance",
+          "claim",
+          "evidence_metrics",
+          "confidence"
+        ],
+        "title": "AgentObservationView"
+      },
+      "AgentReview": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "partial",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "label": {
+            "type": "string",
+            "const": "respons sintetis",
+            "title": "Label",
+            "default": "respons sintetis"
+          },
+          "manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentRunManifestView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "market_observations": {
+            "items": {
+              "$ref": "#/components/schemas/AgentObservationView"
+            },
+            "type": "array",
+            "title": "Market Observations"
+          },
+          "evidence_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Gaps"
+          },
+          "disagreements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disagreements"
+          },
+          "finance_critiques": {
+            "items": {
+              "$ref": "#/components/schemas/AgentCritiqueView"
+            },
+            "type": "array",
+            "title": "Finance Critiques"
+          },
+          "fragile_assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fragile Assumptions"
+          },
+          "narrative_sections": {
+            "items": {
+              "$ref": "#/components/schemas/AgentNarrativeSectionView"
+            },
+            "type": "array",
+            "title": "Narrative Sections"
+          },
+          "red_team_findings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Red Team Findings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AgentReview",
+        "description": "Qualitative agent output, kept separate from every authoritative number."
+      },
+      "AgentRunManifestView": {
+        "properties": {
+          "adapter_id": {
+            "type": "string",
+            "title": "Adapter Id"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "cohort_version": {
+            "type": "string",
+            "title": "Cohort Version"
+          },
+          "oasis_version": {
+            "type": "string",
+            "title": "Oasis Version"
+          },
+          "camel_version": {
+            "type": "string",
+            "title": "Camel Version"
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed"
+          },
+          "persona_count": {
+            "type": "integer",
+            "title": "Persona Count"
+          },
+          "round_limit": {
+            "type": "integer",
+            "title": "Round Limit"
+          },
+          "token_budget": {
+            "type": "integer",
+            "title": "Token Budget"
+          },
+          "tokens_used": {
+            "type": "integer",
+            "title": "Tokens Used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "adapter_id",
+          "provider",
+          "model_id",
+          "prompt_version",
+          "cohort_version",
+          "oasis_version",
+          "camel_version",
+          "seed",
+          "persona_count",
+          "round_limit",
+          "token_budget",
+          "tokens_used"
+        ],
+        "title": "AgentRunManifestView",
+        "description": "What the run can prove about itself. Never a secret, never a prompt."
+      },
+      "AnalysisAccepted": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting_evidence",
+              "building_context",
+              "simulating",
+              "calculating_finance",
+              "scoring",
+              "composing_report",
+              "validating_report",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status_url": {
+            "type": "string",
+            "title": "Status Url"
+          },
+          "events_url": {
+            "type": "string",
+            "title": "Events Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "status",
+          "created_at",
+          "status_url",
+          "events_url"
+        ],
+        "title": "AnalysisAccepted"
+      },
+      "AnalysisCreate": {
+        "properties": {
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "food_stall",
+              "coffee_shop",
+              "restaurant",
+              "bakery",
+              "catering",
+              "food_truck",
+              "cloud_kitchen",
+              "beverage_stand"
+            ],
+            "title": "Business Type"
+          },
+          "concept_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Concept Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/AnalysisLocation"
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/AnalysisPricing"
+          },
+          "operations": {
+            "$ref": "#/components/schemas/AnalysisOperations"
+          },
+          "channels": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "dine_in",
+                "takeaway",
+                "delivery",
+                "catering_order"
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Channels"
+          },
+          "value_proposition": {
+            "type": "string",
+            "maxLength": 600,
+            "minLength": 0,
+            "title": "Value Proposition",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_type",
+          "concept_name",
+          "location",
+          "pricing",
+          "operations",
+          "channels"
+        ],
+        "title": "AnalysisCreate",
+        "description": "Create payload. Identical to the snapshot so nothing is added later."
+      },
+      "AnalysisExportCreate": {
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "pdf",
+            "title": "Format",
+            "default": "pdf"
+          }
+        },
+        "type": "object",
+        "title": "AnalysisExportCreate"
+      },
+      "AnalysisInput": {
+        "properties": {
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "food_stall",
+              "coffee_shop",
+              "restaurant",
+              "bakery",
+              "catering",
+              "food_truck",
+              "cloud_kitchen",
+              "beverage_stand"
+            ],
+            "title": "Business Type"
+          },
+          "concept_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Concept Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/AnalysisLocation"
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/AnalysisPricing"
+          },
+          "operations": {
+            "$ref": "#/components/schemas/AnalysisOperations"
+          },
+          "channels": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "dine_in",
+                "takeaway",
+                "delivery",
+                "catering_order"
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Channels"
+          },
+          "value_proposition": {
+            "type": "string",
+            "maxLength": 600,
+            "minLength": 0,
+            "title": "Value Proposition",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_type",
+          "concept_name",
+          "location",
+          "pricing",
+          "operations",
+          "channels"
+        ],
+        "title": "AnalysisInput",
+        "description": "Validated analysis request. Frozen once a run starts."
+      },
+      "AnalysisListItem": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting_evidence",
+              "building_context",
+              "simulating",
+              "calculating_finance",
+              "scoring",
+              "composing_report",
+              "validating_report",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "concept_name": {
+            "type": "string",
+            "title": "Concept Name"
+          },
+          "area_name": {
+            "type": "string",
+            "title": "Area Name"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "food_stall",
+              "coffee_shop",
+              "restaurant",
+              "bakery",
+              "catering",
+              "food_truck",
+              "cloud_kitchen",
+              "beverage_stand"
+            ],
+            "title": "Business Type"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "interpretation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interpretation"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "status",
+          "concept_name",
+          "area_name",
+          "business_type",
+          "score",
+          "interpretation",
+          "rule_version",
+          "created_at"
+        ],
+        "title": "AnalysisListItem"
+      },
+      "AnalysisLocation": {
+        "properties": {
+          "area_id": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Area Id"
+          },
+          "area_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Name"
+          },
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "analysis_radius_m": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 100.0,
+            "title": "Analysis Radius M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "area_id",
+          "latitude",
+          "longitude",
+          "analysis_radius_m"
+        ],
+        "title": "AnalysisLocation"
+      },
+      "AnalysisOperations": {
+        "properties": {
+          "initial_investment_idr": {
+            "type": "integer",
+            "maximum": 100000000000.0,
+            "minimum": 0.0,
+            "title": "Initial Investment Idr"
+          },
+          "fixed_cost_month_idr": {
+            "type": "integer",
+            "maximum": 100000000000.0,
+            "minimum": 0.0,
+            "title": "Fixed Cost Month Idr"
+          },
+          "operating_days_month": {
+            "type": "integer",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Operating Days Month"
+          },
+          "capacity_units_day": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Capacity Units Day"
+          },
+          "volume_units_day": {
+            "$ref": "#/components/schemas/VolumeRange"
+          }
+        },
+        "type": "object",
+        "required": [
+          "initial_investment_idr",
+          "fixed_cost_month_idr",
+          "operating_days_month",
+          "capacity_units_day",
+          "volume_units_day"
+        ],
+        "title": "AnalysisOperations"
+      },
+      "AnalysisPricing": {
+        "properties": {
+          "average_selling_price_idr": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Average Selling Price Idr"
+          },
+          "variable_cost_per_unit_idr": {
+            "type": "integer",
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Variable Cost Per Unit Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "average_selling_price_idr",
+          "variable_cost_per_unit_idr"
+        ],
+        "title": "AnalysisPricing"
+      },
+      "AnalysisProgress": {
+        "properties": {
+          "completed_stages": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "collecting_evidence",
+                "building_context",
+                "simulating",
+                "calculating_finance",
+                "scoring",
+                "composing_report",
+                "validating_report"
+              ]
+            },
+            "type": "array",
+            "title": "Completed Stages"
+          },
+          "skipped_stages": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "collecting_evidence",
+                "building_context",
+                "simulating",
+                "calculating_finance",
+                "scoring",
+                "composing_report",
+                "validating_report"
+              ]
+            },
+            "type": "array",
+            "title": "Skipped Stages"
+          },
+          "current_stage": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting_evidence",
+              "building_context",
+              "simulating",
+              "calculating_finance",
+              "scoring",
+              "composing_report",
+              "validating_report"
+            ],
+            "title": "Current Stage"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "percent": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "completed_stages",
+          "skipped_stages",
+          "current_stage",
+          "message",
+          "percent"
+        ],
+        "title": "AnalysisProgress"
+      },
+      "AnalysisRead": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting_evidence",
+              "building_context",
+              "simulating",
+              "calculating_finance",
+              "scoring",
+              "composing_report",
+              "validating_report",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "concept_name": {
+            "type": "string",
+            "title": "Concept Name"
+          },
+          "area_name": {
+            "type": "string",
+            "title": "Area Name"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "food_stall",
+              "coffee_shop",
+              "restaurant",
+              "bakery",
+              "catering",
+              "food_truck",
+              "cloud_kitchen",
+              "beverage_stand"
+            ],
+            "title": "Business Type"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "interpretation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interpretation"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version"
+          },
+          "evidence_snapshot_version": {
+            "type": "string",
+            "title": "Evidence Snapshot Version"
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Correlation Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/AnalysisProgress"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisWarning"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "status",
+          "concept_name",
+          "area_name",
+          "business_type",
+          "score",
+          "interpretation",
+          "rule_version",
+          "evidence_snapshot_version",
+          "correlation_id",
+          "created_at",
+          "started_at",
+          "completed_at",
+          "failure_code",
+          "progress",
+          "warnings"
+        ],
+        "title": "AnalysisRead"
+      },
+      "AnalysisReport": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Analysis Id"
+          },
+          "report_version": {
+            "type": "string",
+            "const": "report-v1",
+            "title": "Report Version",
+            "default": "report-v1"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "collecting_evidence",
+              "building_context",
+              "simulating",
+              "calculating_finance",
+              "scoring",
+              "composing_report",
+              "validating_report",
+              "completed",
+              "partial",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "lrs-v0.2-unvalidated",
+            "title": "Rule Version",
+            "default": "lrs-v0.2-unvalidated"
+          },
+          "evidence_snapshot_version": {
+            "type": "string",
+            "title": "Evidence Snapshot Version"
+          },
+          "input_snapshot": {
+            "$ref": "#/components/schemas/AnalysisInput"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/ScoreResult"
+          },
+          "evidence_confidence": {
+            "$ref": "#/components/schemas/EvidenceConfidence"
+          },
+          "market": {
+            "$ref": "#/components/schemas/MarketSection"
+          },
+          "synthetic_simulation": {
+            "$ref": "#/components/schemas/SyntheticSimulation"
+          },
+          "agent_review": {
+            "$ref": "#/components/schemas/AgentReview"
+          },
+          "finance": {
+            "$ref": "#/components/schemas/FinanceResult"
+          },
+          "risks": {
+            "items": {
+              "$ref": "#/components/schemas/ReportRisk"
+            },
+            "type": "array",
+            "title": "Risks"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/ReportRecommendation"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRecord"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "missing_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/MissingEvidence"
+            },
+            "type": "array",
+            "title": "Missing Evidence"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisWarning"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "disclaimer": {
+            "type": "string",
+            "const": "Hasil adalah alat bantu keputusan, bukan jaminan keberhasilan usaha.",
+            "title": "Disclaimer",
+            "default": "Hasil adalah alat bantu keputusan, bukan jaminan keberhasilan usaha."
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "status",
+          "generated_at",
+          "evidence_snapshot_version",
+          "input_snapshot",
+          "readiness",
+          "evidence_confidence",
+          "market",
+          "synthetic_simulation",
+          "agent_review",
+          "finance",
+          "risks",
+          "recommendations",
+          "evidence",
+          "missing_evidence",
+          "limitations",
+          "warnings"
+        ],
+        "title": "AnalysisReport"
+      },
+      "AnalysisWarning": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "queued",
+                  "collecting_evidence",
+                  "building_context",
+                  "simulating",
+                  "calculating_finance",
+                  "scoring",
+                  "composing_report",
+                  "validating_report"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "AnalysisWarning"
+      },
+      "BusinessRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "location_name": {
+            "type": "string",
+            "title": "Location Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/BusinessRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "location_name",
+          "role"
+        ],
+        "title": "BusinessRead"
+      },
+      "BusinessRole": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "cashier"
+        ],
+        "title": "BusinessRole"
+      },
+      "BusinessWrite": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "location_name": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 2,
+            "title": "Location Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "location_name"
+        ],
+        "title": "BusinessWrite"
+      },
+      "CashierProductRead": {
+        "properties": {
+          "access": {
+            "type": "string",
+            "const": "cashier",
+            "title": "Access",
+            "default": "cashier"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "selling_price_idr": {
+            "type": "integer",
+            "title": "Selling Price Idr"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "business_id",
+          "name",
+          "selling_price_idr",
+          "is_active"
+        ],
+        "title": "CashierProductRead"
+      },
+      "ConfidenceField": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "confidence"
+        ],
+        "title": "ConfidenceField"
+      },
+      "DailySales": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "transaction_count": {
+            "type": "integer",
+            "title": "Transaction Count"
+          },
+          "revenue_idr": {
+            "type": "integer",
+            "title": "Revenue Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "transaction_count",
+          "revenue_idr"
+        ],
+        "title": "DailySales"
+      },
+      "DashboardAnalysis": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nama": {
+            "type": "string",
+            "title": "Nama"
+          },
+          "area": {
+            "type": "string",
+            "title": "Area"
+          },
+          "skor": {
+            "type": "integer",
+            "title": "Skor"
+          },
+          "interpretasi": {
+            "type": "string",
+            "title": "Interpretasi"
+          },
+          "rule_version": {
+            "type": "string",
+            "title": "Rule Version"
+          },
+          "dibuat": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dibuat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nama",
+          "area",
+          "skor",
+          "interpretasi",
+          "rule_version",
+          "dibuat"
+        ],
+        "title": "DashboardAnalysis"
+      },
+      "DashboardEducation": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "selesai": {
+            "type": "integer",
+            "title": "Selesai",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DashboardEducation"
+      },
+      "DashboardPlan": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "selesai": {
+            "type": "integer",
+            "title": "Selesai",
+            "default": 0
+          },
+          "berikutnya": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Berikutnya"
+          }
+        },
+        "type": "object",
+        "title": "DashboardPlan"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "keadaan": {
+            "type": "string",
+            "enum": [
+              "belum_ada_data",
+              "sudah_menganalisis",
+              "usaha_berjalan_data_kurang",
+              "usaha_berjalan_data_cukup",
+              "kasir_belum_mencatat",
+              "kasir_sudah_mencatat"
+            ],
+            "title": "Keadaan"
+          },
+          "analisis_terakhir": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DashboardAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rencana_30_hari": {
+            "$ref": "#/components/schemas/DashboardPlan"
+          },
+          "transaksi": {
+            "$ref": "#/components/schemas/DashboardTransactions"
+          },
+          "insight_terbaru": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransactionInsight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "edukasi": {
+            "$ref": "#/components/schemas/DashboardEducation"
+          },
+          "riwayat_analisis": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardAnalysis"
+            },
+            "type": "array",
+            "title": "Riwayat Analisis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keadaan",
+          "analisis_terakhir",
+          "rencana_30_hari",
+          "transaksi",
+          "insight_terbaru",
+          "edukasi",
+          "riwayat_analisis"
+        ],
+        "title": "DashboardResponse"
+      },
+      "DashboardToday": {
+        "properties": {
+          "jumlah": {
+            "type": "integer",
+            "title": "Jumlah"
+          },
+          "pendapatan_idr": {
+            "type": "integer",
+            "title": "Pendapatan Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jumlah",
+          "pendapatan_idr"
+        ],
+        "title": "DashboardToday"
+      },
+      "DashboardTransactions": {
+        "properties": {
+          "hari_tercatat": {
+            "type": "integer",
+            "title": "Hari Tercatat"
+          },
+          "ambang": {
+            "type": "integer",
+            "const": 7,
+            "title": "Ambang",
+            "default": 7
+          },
+          "hari_ini": {
+            "$ref": "#/components/schemas/DashboardToday"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hari_tercatat",
+          "hari_ini"
+        ],
+        "title": "DashboardTransactions"
+      },
+      "DimensionScore": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "market_saturation",
+              "demand_potential",
+              "price_positioning",
+              "operational_readiness"
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "weight_percent": {
+            "type": "integer",
+            "title": "Weight Percent"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scored",
+              "not_scorable"
+            ],
+            "title": "Status"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "applied_rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Applied Rules"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "missing_inputs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Inputs"
+          },
+          "evidence_metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "weight_percent",
+          "status",
+          "score",
+          "applied_rules",
+          "rationale",
+          "missing_inputs",
+          "evidence_metrics"
+        ],
+        "title": "DimensionScore"
+      },
+      "EducationCompleteRequest": {
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Content Version"
+          },
+          "answers": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 0,
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content_version",
+          "answers"
+        ],
+        "title": "EducationCompleteRequest"
+      },
+      "EducationCompleteResponse": {
+        "properties": {
+          "module_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Module Id"
+          },
+          "content_version": {
+            "type": "string",
+            "title": "Content Version"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "correct_answers": {
+            "type": "integer",
+            "title": "Correct Answers"
+          },
+          "total_questions": {
+            "type": "integer",
+            "title": "Total Questions"
+          },
+          "passing_score_percent": {
+            "type": "integer",
+            "title": "Passing Score Percent"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module_id",
+          "content_version",
+          "passed",
+          "correct_answers",
+          "total_questions",
+          "passing_score_percent",
+          "completed_at"
+        ],
+        "title": "EducationCompleteResponse"
+      },
+      "EducationModuleDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "content_version": {
+            "type": "string",
+            "title": "Content Version"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "business_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "food_stall",
+                "coffee_shop",
+                "restaurant",
+                "bakery",
+                "catering",
+                "food_truck",
+                "cloud_kitchen",
+                "beverage_stand"
+              ]
+            },
+            "type": "array",
+            "title": "Business Types"
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EducationProgressRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "passing_score_percent": {
+            "type": "integer",
+            "title": "Passing Score Percent"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/EducationQuestionRead"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "summary",
+          "topic",
+          "content_version",
+          "estimated_minutes",
+          "business_types",
+          "is_required",
+          "reviewed_at",
+          "progress",
+          "body",
+          "passing_score_percent",
+          "questions"
+        ],
+        "title": "EducationModuleDetail"
+      },
+      "EducationModuleSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "content_version": {
+            "type": "string",
+            "title": "Content Version"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "business_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "food_stall",
+                "coffee_shop",
+                "restaurant",
+                "bakery",
+                "catering",
+                "food_truck",
+                "cloud_kitchen",
+                "beverage_stand"
+              ]
+            },
+            "type": "array",
+            "title": "Business Types"
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EducationProgressRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "summary",
+          "topic",
+          "content_version",
+          "estimated_minutes",
+          "business_types",
+          "is_required",
+          "reviewed_at",
+          "progress"
+        ],
+        "title": "EducationModuleSummary"
+      },
+      "EducationPrerequisiteModule": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "content_version": {
+            "type": "string",
+            "title": "Content Version"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "content_version",
+          "estimated_minutes",
+          "completed"
+        ],
+        "title": "EducationPrerequisiteModule"
+      },
+      "EducationPrerequisites": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "education-gate-v1",
+            "title": "Rule Version",
+            "default": "education-gate-v1"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "food_stall",
+              "coffee_shop",
+              "restaurant",
+              "bakery",
+              "catering",
+              "food_truck",
+              "cloud_kitchen",
+              "beverage_stand"
+            ],
+            "title": "Business Type"
+          },
+          "satisfied": {
+            "type": "boolean",
+            "title": "Satisfied"
+          },
+          "content_available": {
+            "type": "boolean",
+            "title": "Content Available"
+          },
+          "required": {
+            "items": {
+              "$ref": "#/components/schemas/EducationPrerequisiteModule"
+            },
+            "type": "array",
+            "title": "Required"
+          },
+          "outstanding": {
+            "items": {
+              "$ref": "#/components/schemas/EducationPrerequisiteModule"
+            },
+            "type": "array",
+            "title": "Outstanding"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_type",
+          "satisfied",
+          "content_available",
+          "required",
+          "outstanding",
+          "note"
+        ],
+        "title": "EducationPrerequisites"
+      },
+      "EducationProgressRead": {
+        "properties": {
+          "module_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Module Id"
+          },
+          "content_version": {
+            "type": "string",
+            "title": "Content Version"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "correct_answers": {
+            "type": "integer",
+            "title": "Correct Answers"
+          },
+          "total_questions": {
+            "type": "integer",
+            "title": "Total Questions"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module_id",
+          "content_version",
+          "started_at",
+          "completed_at",
+          "correct_answers",
+          "total_questions",
+          "passed"
+        ],
+        "title": "EducationProgressRead"
+      },
+      "EducationQuestionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "prompt",
+          "options"
+        ],
+        "title": "EducationQuestionRead"
+      },
+      "EvidenceConfidence": {
+        "properties": {
+          "formula_version": {
+            "type": "string",
+            "const": "evidence-confidence-v0.1-unvalidated",
+            "title": "Formula Version",
+            "default": "evidence-confidence-v0.1-unvalidated"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "label": {
+            "type": "string",
+            "enum": [
+              "tinggi",
+              "sedang",
+              "rendah",
+              "tidak_tersedia"
+            ],
+            "title": "Label"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "label",
+          "missing"
+        ],
+        "title": "EvidenceConfidence"
+      },
+      "EvidenceQuality": {
+        "properties": {
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "unknown"
+            ],
+            "title": "Coverage"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "recent",
+              "aging",
+              "stale",
+              "unknown"
+            ],
+            "title": "Freshness"
+          },
+          "geographic_fit": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Geographic Fit"
+          },
+          "sample_sufficiency": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Sample Sufficiency"
+          },
+          "cross_source_consistency": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Cross Source Consistency"
+          },
+          "source_quality": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Source Quality"
+          },
+          "sample_size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coverage",
+          "freshness",
+          "geographic_fit",
+          "sample_sufficiency",
+          "cross_source_consistency",
+          "source_quality"
+        ],
+        "title": "EvidenceQuality"
+      },
+      "EvidenceRecord": {
+        "properties": {
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "geography": {
+            "$ref": "#/components/schemas/Geography"
+          },
+          "category_mapping_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Mapping Version"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/EvidenceQuality"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric",
+          "value",
+          "unit",
+          "geography",
+          "source",
+          "observed_at",
+          "retrieved_at",
+          "quality"
+        ],
+        "title": "EvidenceRecord",
+        "description": "A single observed value with the provenance docs/05 requires.\n\n`value` is an integer because every MVP metric is a count or an integer\nrupiah amount. A metric that genuinely needs fractions must extend this\ncontract with a new version rather than silently introduce floats."
+      },
+      "ExportRead": {
+        "properties": {
+          "export_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Export Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "analysis_report",
+              "transaction_summary"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "ready",
+              "failed",
+              "expired"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "download": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignedTransfer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "export_id",
+          "kind",
+          "status",
+          "created_at",
+          "download",
+          "failure_code"
+        ],
+        "title": "ExportRead"
+      },
+      "FinanceResult": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "IDR",
+            "title": "Currency",
+            "default": "IDR"
+          },
+          "rule_version": {
+            "type": "string",
+            "const": "finance-v1",
+            "title": "Rule Version",
+            "default": "finance-v1"
+          },
+          "contribution_margin_per_unit_idr": {
+            "type": "integer",
+            "title": "Contribution Margin Per Unit Idr"
+          },
+          "contribution_margin_ratio_bps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Margin Ratio Bps"
+          },
+          "bep_units_month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bep Units Month"
+          },
+          "bep_units_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bep Units Day"
+          },
+          "bep_revenue_month_idr": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bep Revenue Month Idr"
+          },
+          "runway_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runway Months"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/FinanceScenario"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "assumptions_included": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions Included"
+          },
+          "assumptions_excluded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions Excluded"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/FinanceWarning"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contribution_margin_per_unit_idr",
+          "contribution_margin_ratio_bps",
+          "bep_units_month",
+          "bep_units_day",
+          "bep_revenue_month_idr",
+          "runway_months",
+          "scenarios",
+          "assumptions_included",
+          "assumptions_excluded",
+          "warnings"
+        ],
+        "title": "FinanceResult"
+      },
+      "FinanceScenario": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "conservative",
+              "base",
+              "optimistic"
+            ],
+            "title": "Name"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "volume_units_day": {
+            "type": "integer",
+            "title": "Volume Units Day"
+          },
+          "monthly_units": {
+            "type": "integer",
+            "title": "Monthly Units"
+          },
+          "monthly_revenue_idr": {
+            "type": "integer",
+            "title": "Monthly Revenue Idr"
+          },
+          "monthly_operating_profit_idr": {
+            "type": "integer",
+            "title": "Monthly Operating Profit Idr"
+          },
+          "payback_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payback Months"
+          },
+          "exceeds_capacity": {
+            "type": "boolean",
+            "title": "Exceeds Capacity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "label",
+          "volume_units_day",
+          "monthly_units",
+          "monthly_revenue_idr",
+          "monthly_operating_profit_idr",
+          "payback_months",
+          "exceeds_capacity"
+        ],
+        "title": "FinanceScenario"
+      },
+      "FinanceWarning": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "conservative",
+                  "base",
+                  "optimistic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "FinanceWarning"
+      },
+      "Geography": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "radius",
+              "area",
+              "national"
+            ],
+            "title": "Type"
+          },
+          "area_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Id"
+          },
+          "center_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Center Id"
+          },
+          "meters": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "Geography"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "environment"
+        ],
+        "title": "HealthResponse"
+      },
+      "HourlySales": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "maximum": 23.0,
+            "minimum": 0.0,
+            "title": "Hour"
+          },
+          "transaction_count": {
+            "type": "integer",
+            "title": "Transaction Count"
+          },
+          "revenue_idr": {
+            "type": "integer",
+            "title": "Revenue Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hour",
+          "transaction_count",
+          "revenue_idr"
+        ],
+        "title": "HourlySales"
+      },
+      "InviteRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "business_id",
+          "code",
+          "expires_at"
+        ],
+        "title": "InviteRead"
+      },
+      "InviteRedeemRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 8,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "InviteRedeemRequest"
+      },
+      "InviteStatusRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "redeemed",
+              "revoked",
+              "expired"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "business_id",
+          "expires_at",
+          "created_at",
+          "status"
+        ],
+        "title": "InviteStatusRead"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "MarketSection": {
+        "properties": {
+          "area_id": {
+            "type": "string",
+            "title": "Area Id"
+          },
+          "area_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Name"
+          },
+          "analysis_radius_m": {
+            "type": "integer",
+            "title": "Analysis Radius M"
+          },
+          "category_mapping_version": {
+            "type": "string",
+            "title": "Category Mapping Version"
+          },
+          "competitor_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competitor Count"
+          },
+          "population_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Population Count"
+          },
+          "comparable_price_median_idr": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparable Price Median Idr"
+          },
+          "comparable_price_sample_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparable Price Sample Size"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "area_id",
+          "area_name",
+          "analysis_radius_m",
+          "category_mapping_version",
+          "competitor_count",
+          "population_count",
+          "comparable_price_median_idr",
+          "comparable_price_sample_size",
+          "notes"
+        ],
+        "title": "MarketSection"
+      },
+      "MembershipRead": {
+        "properties": {
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "business_name": {
+            "type": "string",
+            "title": "Business Name"
+          },
+          "location_name": {
+            "type": "string",
+            "title": "Location Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/BusinessRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_id",
+          "business_name",
+          "location_name",
+          "role"
+        ],
+        "title": "MembershipRead"
+      },
+      "MembershipResult": {
+        "properties": {
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/BusinessRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_id",
+          "role"
+        ],
+        "title": "MembershipResult"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "MissingEvidence": {
+        "properties": {
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric",
+          "reason_code",
+          "reason"
+        ],
+        "title": "MissingEvidence"
+      },
+      "ObservationWindow": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "timezone": {
+            "type": "string",
+            "const": "Asia/Jakarta",
+            "title": "Timezone",
+            "default": "Asia/Jakarta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "ObservationWindow"
+      },
+      "OwnerProductRead": {
+        "properties": {
+          "access": {
+            "type": "string",
+            "const": "owner",
+            "title": "Access",
+            "default": "owner"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "selling_price_idr": {
+            "type": "integer",
+            "title": "Selling Price Idr"
+          },
+          "hpp_idr": {
+            "type": "integer",
+            "title": "Hpp Idr"
+          },
+          "margin_idr": {
+            "type": "integer",
+            "title": "Margin Idr"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "business_id",
+          "name",
+          "selling_price_idr",
+          "hpp_idr",
+          "margin_idr",
+          "is_active"
+        ],
+        "title": "OwnerProductRead"
+      },
+      "ProductCreate": {
+        "properties": {
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "selling_price_idr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Selling Price Idr"
+          },
+          "hpp_idr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Hpp Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_id",
+          "name",
+          "selling_price_idr",
+          "hpp_idr"
+        ],
+        "title": "ProductCreate"
+      },
+      "ProductSales": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "revenue_idr": {
+            "type": "integer",
+            "title": "Revenue Idr"
+          },
+          "exposure_days": {
+            "type": "integer",
+            "title": "Exposure Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "product_name",
+          "quantity",
+          "revenue_idr",
+          "exposure_days"
+        ],
+        "title": "ProductSales"
+      },
+      "ProductUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "selling_price_idr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Selling Price Idr"
+          },
+          "hpp_idr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Hpp Idr"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "selling_price_idr",
+          "hpp_idr",
+          "is_active"
+        ],
+        "title": "ProductUpdate"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
+          },
+          "redis": {
+            "type": "string",
+            "title": "Redis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database",
+          "redis"
+        ],
+        "title": "ReadinessResponse"
+      },
+      "ReceiptConfirm": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Version"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "dine_in",
+              "takeaway",
+              "delivery"
+            ],
+            "title": "Channel"
+          },
+          "accept_total_mismatch": {
+            "type": "boolean",
+            "title": "Accept Total Mismatch",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "channel"
+        ],
+        "title": "ReceiptConfirm"
+      },
+      "ReceiptConfirmResult": {
+        "properties": {
+          "receipt_import_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Receipt Import Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "committed",
+            "title": "Status"
+          },
+          "transaction": {
+            "$ref": "#/components/schemas/TransactionRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receipt_import_id",
+          "status",
+          "transaction"
+        ],
+        "title": "ReceiptConfirmResult"
+      },
+      "ReceiptDraftItemRead": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "raw_name": {
+            "type": "string",
+            "title": "Raw Name"
+          },
+          "matched_product_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Product Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit_price_idr": {
+            "type": "integer",
+            "title": "Unit Price Idr"
+          },
+          "line_total_idr": {
+            "type": "integer",
+            "title": "Line Total Idr"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "corrected": {
+            "type": "boolean",
+            "title": "Corrected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "raw_name",
+          "matched_product_id",
+          "quantity",
+          "unit_price_idr",
+          "line_total_idr",
+          "confidence",
+          "corrected"
+        ],
+        "title": "ReceiptDraftItemRead"
+      },
+      "ReceiptDraftItemUpdate": {
+        "properties": {
+          "raw_name": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Raw Name"
+          },
+          "matched_product_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Product Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "unit_price_idr": {
+            "type": "integer",
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Unit Price Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_name",
+          "matched_product_id",
+          "quantity",
+          "unit_price_idr"
+        ],
+        "title": "ReceiptDraftItemUpdate"
+      },
+      "ReceiptDraftRead": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "merchant_name": {
+            "$ref": "#/components/schemas/ConfidenceField"
+          },
+          "occurred_at": {
+            "$ref": "#/components/schemas/ConfidenceField"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptDraftItemRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total_idr": {
+            "$ref": "#/components/schemas/ConfidenceField"
+          },
+          "calculated_items_total_idr": {
+            "type": "integer",
+            "title": "Calculated Items Total Idr"
+          },
+          "total_matches_items": {
+            "type": "boolean",
+            "title": "Total Matches Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "merchant_name",
+          "occurred_at",
+          "items",
+          "total_idr",
+          "calculated_items_total_idr",
+          "total_matches_items"
+        ],
+        "title": "ReceiptDraftRead"
+      },
+      "ReceiptDraftUpdate": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Version"
+          },
+          "merchant_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 180
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant Name"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "total_idr": {
+            "type": "integer",
+            "maximum": 10000000000.0,
+            "minimum": 0.0,
+            "title": "Total Idr"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptDraftItemUpdate"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "occurred_at",
+          "total_idr",
+          "items"
+        ],
+        "title": "ReceiptDraftUpdate"
+      },
+      "ReceiptImportCreate": {
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "File Name"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png"
+            ],
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "title": "Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name",
+          "content_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "ReceiptImportCreate"
+      },
+      "ReceiptImportCreated": {
+        "properties": {
+          "receipt_import_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Receipt Import Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "uploading",
+            "title": "Status"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/SignedTransfer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receipt_import_id",
+          "status",
+          "upload"
+        ],
+        "title": "ReceiptImportCreated"
+      },
+      "ReceiptImportRead": {
+        "properties": {
+          "receipt_import_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Receipt Import Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploading",
+              "queued",
+              "preprocessing",
+              "extracting",
+              "ready_for_review",
+              "confirmed",
+              "committed",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptDraftRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignedTransfer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "transaction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransactionRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "receipt_import_id",
+          "business_id",
+          "status",
+          "draft",
+          "warnings",
+          "image",
+          "failure_code"
+        ],
+        "title": "ReceiptImportRead"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Display Name"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "display_name",
+          "password"
+        ],
+        "title": "RegisterRequest"
+      },
+      "ReportRecommendation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "tinggi",
+              "sedang",
+              "rendah"
+            ],
+            "title": "Priority"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "priority",
+          "title",
+          "rationale",
+          "source"
+        ],
+        "title": "ReportRecommendation"
+      },
+      "ReportRisk": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "tinggi",
+              "sedang",
+              "rendah"
+            ],
+            "title": "Severity"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "severity",
+          "title",
+          "detail",
+          "source"
+        ],
+        "title": "ReportRisk"
+      },
+      "ScoreResult": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "lrs-v0.2-unvalidated",
+            "title": "Rule Version",
+            "default": "lrs-v0.2-unvalidated"
+          },
+          "validation_status": {
+            "type": "string",
+            "const": "unvalidated",
+            "title": "Validation Status",
+            "default": "unvalidated"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "interpretation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interpretation"
+          },
+          "interpretation_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interpretation Label"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionScore"
+            },
+            "type": "array",
+            "title": "Dimensions"
+          },
+          "missing_dimensions": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "market_saturation",
+                "demand_potential",
+                "price_positioning",
+                "operational_readiness"
+              ]
+            },
+            "type": "array",
+            "title": "Missing Dimensions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "score",
+          "interpretation",
+          "interpretation_label",
+          "dimensions",
+          "missing_dimensions"
+        ],
+        "title": "ScoreResult"
+      },
+      "SessionResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserRead"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/MembershipRead"
+            },
+            "type": "array",
+            "title": "Memberships"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "memberships"
+        ],
+        "title": "SessionResponse"
+      },
+      "SignedTransfer": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "PUT",
+              "GET"
+            ],
+            "title": "Method"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "url",
+          "expires_at"
+        ],
+        "title": "SignedTransfer"
+      },
+      "SyntheticObjectionView": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "label",
+          "count"
+        ],
+        "title": "SyntheticObjectionView"
+      },
+      "SyntheticPriceBandView": {
+        "properties": {
+          "min_idr": {
+            "type": "integer",
+            "title": "Min Idr"
+          },
+          "max_idr": {
+            "type": "integer",
+            "title": "Max Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_idr",
+          "max_idr"
+        ],
+        "title": "SyntheticPriceBandView"
+      },
+      "SyntheticQuoteView": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "archetype": {
+            "type": "string",
+            "title": "Archetype"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "label": {
+            "type": "string",
+            "const": "respons sintetis",
+            "title": "Label",
+            "default": "respons sintetis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "archetype",
+          "text"
+        ],
+        "title": "SyntheticQuoteView",
+        "description": "A persona quote. The label travels with the data so no surface can drop it."
+      },
+      "SyntheticSegmentView": {
+        "properties": {
+          "archetype": {
+            "type": "string",
+            "title": "Archetype"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "persona_count": {
+            "type": "integer",
+            "title": "Persona Count"
+          },
+          "purchase_intent_count": {
+            "type": "integer",
+            "title": "Purchase Intent Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archetype",
+          "label",
+          "persona_count",
+          "purchase_intent_count"
+        ],
+        "title": "SyntheticSegmentView"
+      },
+      "SyntheticSimulation": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unavailable",
+              "experimental"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "cohort_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Size"
+          },
+          "cohort_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Version"
+          },
+          "rounds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rounds"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Metrics"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SyntheticSegmentView"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "objections": {
+            "items": {
+              "$ref": "#/components/schemas/SyntheticObjectionView"
+            },
+            "type": "array",
+            "title": "Objections"
+          },
+          "acceptable_price_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyntheticPriceBandView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quotes": {
+            "items": {
+              "$ref": "#/components/schemas/SyntheticQuoteView"
+            },
+            "type": "array",
+            "title": "Quotes"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "reason",
+          "cohort_size"
+        ],
+        "title": "SyntheticSimulation",
+        "description": "Counts, never shares.\n\ndocs/04 is explicit that a synthetic purchase share is not a conversion\nrate. Reporting \"9 dari 16 persona\" keeps the denominator visible, where a\npercentage next to real market data would read as a measurement."
+      },
+      "TransactionAnalytics": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "collecting",
+              "available"
+            ],
+            "title": "Status"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "days_recorded": {
+            "type": "integer",
+            "title": "Days Recorded"
+          },
+          "threshold_days": {
+            "type": "integer",
+            "const": 7,
+            "title": "Threshold Days",
+            "default": 7
+          },
+          "observation_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ObservationWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "daily_sales": {
+            "items": {
+              "$ref": "#/components/schemas/DailySales"
+            },
+            "type": "array",
+            "title": "Daily Sales"
+          },
+          "product_sales": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSales"
+            },
+            "type": "array",
+            "title": "Product Sales"
+          },
+          "top_product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductSales"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bottom_product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductSales"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hourly_sales": {
+            "items": {
+              "$ref": "#/components/schemas/HourlySales"
+            },
+            "type": "array",
+            "title": "Hourly Sales"
+          },
+          "insights": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionInsight"
+            },
+            "type": "array",
+            "title": "Insights"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "business_id",
+          "days_recorded",
+          "observation_window",
+          "daily_sales",
+          "product_sales",
+          "top_product",
+          "bottom_product",
+          "hourly_sales",
+          "insights",
+          "limitations"
+        ],
+        "title": "TransactionAnalytics"
+      },
+      "TransactionBatchCreate": {
+        "properties": {
+          "transactions": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionCreate"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Transactions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transactions"
+        ],
+        "title": "TransactionBatchCreate"
+      },
+      "TransactionCreate": {
+        "properties": {
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "dine_in",
+              "takeaway",
+              "delivery"
+            ],
+            "title": "Channel"
+          },
+          "client_reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Reference"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemWrite"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_id",
+          "occurred_at",
+          "channel",
+          "items"
+        ],
+        "title": "TransactionCreate"
+      },
+      "TransactionExportCreate": {
+        "properties": {
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "format": {
+            "type": "string",
+            "const": "pdf",
+            "title": "Format",
+            "default": "pdf"
+          }
+        },
+        "type": "object",
+        "required": [
+          "business_id",
+          "start",
+          "end"
+        ],
+        "title": "TransactionExportCreate"
+      },
+      "TransactionInsight": {
+        "properties": {
+          "rule_version": {
+            "type": "string",
+            "const": "transaction-insight-v1",
+            "title": "Rule Version",
+            "default": "transaction-insight-v1"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "observation_window": {
+            "$ref": "#/components/schemas/ObservationWindow"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "observation_window"
+        ],
+        "title": "TransactionInsight"
+      },
+      "TransactionItemRead": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit_price_idr": {
+            "type": "integer",
+            "title": "Unit Price Idr"
+          },
+          "line_total_idr": {
+            "type": "integer",
+            "title": "Line Total Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "product_name",
+          "quantity",
+          "unit_price_idr",
+          "line_total_idr"
+        ],
+        "title": "TransactionItemRead"
+      },
+      "TransactionItemWrite": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "unit_price_idr": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unit Price Idr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_price_idr"
+        ],
+        "title": "TransactionItemWrite"
+      },
+      "TransactionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "business_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Id"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "gross_total_idr": {
+            "type": "integer",
+            "title": "Gross Total Idr"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "client_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Reference"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionItemRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "business_id",
+          "occurred_at",
+          "channel",
+          "gross_total_idr",
+          "source",
+          "client_reference",
+          "items"
+        ],
+        "title": "TransactionRead"
+      },
+      "UserRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "created_at"
+        ],
+        "title": "UserRead"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VolumeRange": {
+        "properties": {
+          "min": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Min"
+          },
+          "base": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Base"
+          },
+          "max": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Max"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min",
+          "base",
+          "max"
+        ],
+        "title": "VolumeRange"
+      }
+    }
+  }
+}

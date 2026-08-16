@@ -1,0 +1,25 @@
+---
+title: Peran dan akses
+description: Batas akses owner dan cashier pada setiap usaha.
+---
+
+Role melekat pada pasangan user dan usaha. Satu user dapat menjadi owner pada satu usaha dan cashier pada usaha lain.
+
+## Owner
+
+Owner mengelola profil usaha, produk, membership, riwayat transaksi, analytics, laporan, dan export. Dashboard owner adalah ringkasan komposit seluruh usaha. Filter per usaha tersedia pada area yang membutuhkan konteks bisnis.
+
+## Cashier
+
+Cashier bekerja dalam satu konteks toko yang ditugaskan. Fokusnya adalah membaca produk aktif dan mencatat transaksi. Cashier tidak mengelola produk, melihat HPP atau margin, membuka analytics owner, atau mengubah membership.
+
+## Undangan kasir
+
+Owner membuat kode delapan karakter yang sekali pakai dan berlaku tujuh hari. Backend hanya menyimpan hash kode. Owner dapat melihat status undangan atau mencabutnya tanpa menerima kembali kode mentah.
+
+## Enforcement
+
+Menyembunyikan menu bukan otorisasi. API dan repository memvalidasi membership dan role pada setiap resource tenant-scoped. Resource dari usaha lain mengembalikan `404`, termasuk ketika UUID tersebut benar-benar ada, agar keberadaan tenant tidak bocor.
+
+Access token dan refresh token dikirim menggunakan cookie `HttpOnly` dan `SameSite=Lax`. Refresh token disimpan sebagai hash dan dirotasi saat digunakan. Frontend tidak menyimpan token di `localStorage`.
+

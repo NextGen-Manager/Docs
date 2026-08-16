@@ -1,0 +1,32 @@
+---
+title: OASIS and the deterministic boundary
+description: How SimuMarket AI uses OASIS without giving authoritative numbers to an LLM.
+---
+
+OASIS is used as an agent-interaction environment, not as a general backend or calculator. The SimuMarket AI orchestrator builds structured context, creates councils, limits actions, runs rounds, stores traces, and validates artifacts.
+
+## Council authority
+
+| Council | Allowed | Not allowed |
+|---|---|---|
+| Market Analyst | Interpret evidence IDs and critique market conditions | Create new evidence |
+| Customer Persona | Respond to stimuli as a synthetic persona | Claim to represent a real population survey |
+| Finance | Critique assumptions and request the deterministic calculator | Invent break-even, margin, or payback values |
+| Report | Compose narrative from validated artifacts | Add numbers without provenance |
+
+Finance and scoring execute from typed inputs regardless of agent success. A council's requested volume is clamped to the user's input range. Narrative validation rejects numbers absent from valid input, evidence, finance, score, or simulation artifacts.
+
+## Privacy boundary
+
+Only a structured `SimulationRequest` may leave for the provider. IDs are salted and hashed. Email addresses, phone numbers, and URLs in free text are redacted. Customer names, phone numbers, raw receipt text, and free-form notes never enter provider prompts.
+
+## Adapters
+
+- `live` lazily loads CAMEL/OASIS and Gemini.
+- `fake` produces deterministic test artifacts and is rejected in staging or production.
+- `unavailable` records why a provider cannot be used.
+
+All adapters pass through the same artifact validators. In this baseline, live Gemini has not been verified without an API key.
+
+Framework reference: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
+

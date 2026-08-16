@@ -1,0 +1,43 @@
+---
+title: SimuMarket AI Documentation
+description: User guides, architecture, API, and development documentation for SimuMarket AI.
+---
+
+SimuMarket AI is a Decision Support System for prospective and operating F&B MSMEs in Greater Jakarta. It helps users learn business fundamentals, evaluate a plan before launch, record transactions after launch, and understand operational patterns.
+
+> Analysis results support decisions. They do not guarantee business success.
+
+## Choose your path
+
+<Cards>
+  <Card title="I want to use the product" description="Follow the Market Analysis, transaction, receipt, and report workflows." href="/en/docs/panduan-pengguna/analisis-pasar" />
+  <Card title="I want to run the codebase" description="Set up all three repositories and local services." href="/en/docs/setup-developer/end-to-end" />
+  <Card title="I want to understand the architecture" description="Review the OASIS boundary, deterministic engine, evidence, and workers." href="/en/docs/arsitektur/sistem" />
+  <Card title="I want to inspect the API" description="Learn the API v1 conventions and endpoints." href="/en/docs/api/ringkasan" />
+</Cards>
+
+## Honest status labels
+
+The documentation distinguishes five states:
+
+| Label | Meaning |
+|---|---|
+| Implemented | Present in the audited code baseline with relevant verification |
+| Demo | Uses seed data or an interactive prototype |
+| Planned | Designed but not available in the baseline |
+| Unavailable | An integration explicitly reports that it is unavailable |
+| Unvalidated | Operational, but its parameters or quality are not yet expert-validated |
+
+This documentation publishes only product capabilities, contracts, and limitations relevant to users and developers.
+
+## Documented baseline
+
+Content was verified on 16 August 2026 against frontend commit `ac358ee`, backend commit `2ec6bb8`, and the canonical Docs repository. The live Gemini integration has not been exercised without an API key. Automated tests use the deterministic fake OASIS adapter.
+
+## Rules that do not change
+
+1. The LLM is never the authoritative source of numbers.
+2. Every factual number has provenance.
+3. Partial failure remains visible as `partial`.
+4. Money uses integer Indonesian rupiah.
+5. Customer data and raw receipt text are never sent to the LLM provider.

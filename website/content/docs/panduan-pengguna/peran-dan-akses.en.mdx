@@ -1,0 +1,24 @@
+---
+title: Roles and access
+description: Owner and cashier boundaries within each business.
+---
+
+A role belongs to a user-business pair. One user can be an owner in one business and a cashier in another.
+
+## Owner
+
+An owner manages the business profile, products, memberships, transaction history, analytics, reports, and exports. The owner dashboard is a composite summary across owned businesses. Per-business filters are available where business context is required.
+
+## Cashier
+
+A cashier works within one assigned store context. The role focuses on reading active products and recording transactions. A cashier cannot manage products, inspect cost or margin, open owner analytics, or change memberships.
+
+## Cashier invitations
+
+The owner creates an eight-character, single-use code that remains valid for seven days. Only a hash is stored. The owner can inspect invitation status or revoke it without receiving the raw code again.
+
+## Enforcement
+
+Hiding a menu is not authorisation. The API and repositories validate membership and role for every tenant-scoped resource. Another business's resource returns `404` even when the UUID exists, preventing tenant enumeration.
+
+Access and refresh tokens are delivered through `HttpOnly`, `SameSite=Lax` cookies. Refresh tokens are stored as hashes and rotated on use. The frontend does not store tokens in `localStorage`.

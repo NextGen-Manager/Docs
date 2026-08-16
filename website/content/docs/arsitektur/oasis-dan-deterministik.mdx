@@ -1,0 +1,32 @@
+---
+title: OASIS dan deterministic boundary
+description: Cara SimuMarket AI memakai OASIS tanpa menyerahkan angka otoritatif kepada LLM.
+---
+
+OASIS dipakai sebagai environment interaksi agent, bukan sebagai backend umum atau kalkulator. Orchestrator SimuMarket AI membangun konteks terstruktur, membuat council, membatasi action, menjalankan round, menyimpan trace, dan memvalidasi artifact.
+
+## Council dan kewenangan
+
+| Council | Boleh dilakukan | Tidak boleh dilakukan |
+|---|---|---|
+| Market Analyst | Menafsirkan evidence ID dan mengkritik kondisi pasar | Membuat evidence baru |
+| Customer Persona | Merespons stimulus sebagai persona sintetis | Mengklaim sebagai survei populasi nyata |
+| Finance | Mengkritik asumsi dan meminta kalkulator deterministik | Mengarang BEP, margin, atau payback |
+| Report | Menyusun narasi dari artifact tervalidasi | Menambah angka tanpa provenance |
+
+Finance dan scoring berjalan dari typed input terlepas dari keberhasilan agent. Volume yang diminta council dibatasi pada rentang input pengguna. Narrative validator menolak angka yang tidak ada pada input, evidence, finance, score, atau simulation artifact yang sah.
+
+## Privacy boundary
+
+Hanya `SimulationRequest` terstruktur yang dapat keluar menuju provider. ID di-hash dengan salt. Email, telepon, dan URL pada free text direduksi. Nama pelanggan, nomor telepon, teks struk mentah, dan catatan bebas tidak pernah menjadi prompt provider.
+
+## Adapter
+
+- `live` memakai CAMEL/OASIS dan Gemini secara lazy-loaded.
+- `fake` menghasilkan artifact deterministik untuk test dan ditolak pada staging/production.
+- `unavailable` mencatat alasan provider tidak dapat dipakai.
+
+Ketiga adapter melewati validator artifact yang sama. Pada baseline ini, live Gemini belum diverifikasi tanpa API key.
+
+Referensi framework: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
+

@@ -1,0 +1,42 @@
+---
+title: Ringkasan API
+description: Convention transport, authentication, idempotency, async job, dan error SimuMarket AI API.
+---
+
+API HTTP SimuMarket AI menggunakan prefix `/v1`. Skema OpenAPI yang diekspor dari FastAPI menjadi sumber referensi endpoint dan schema di website ini. Base URL bergantung pada environment deployment.
+
+## Convention
+
+| Area | Bentuk |
+|---|---|
+| Content type | `application/json`, kecuali SSE dan upload langsung ke object storage |
+| Uang | Integer IDR, misalnya `49000`, bukan `49000.0` |
+| Waktu | ISO 8601 dalam UTC |
+| Resource ID | UUID |
+| Authentication | Access dan refresh token melalui cookie `HttpOnly` |
+| Correlation | `X-Correlation-ID` untuk menelusuri request |
+| Retry create | `Idempotency-Key` pada operasi yang mendukung retry |
+
+Browser harus mengirim credential cookie pada request lintas origin. Token tidak disimpan di `localStorage`. Refresh token dirotasi setelah refresh berhasil dan versi lama tidak dapat digunakan kembali.
+
+## Business scope dan RBAC
+
+Role melekat pada membership user dan usaha, bukan pada user secara global. `owner` mengelola profil usaha, produk, anggota, analysis, dan report. `cashier` hanya dapat mencatat transaksi pada usaha tempatnya menjadi anggota. Resource dari tenant lain dikembalikan sebagai `404` agar keberadaannya tidak bocor.
+
+Endpoint yang bekerja dalam konteks usaha menerima `business_id` melalui query atau body sesuai schema. Seluruh endpoint receipt import memakai query `business_id` pada setiap langkah, termasuk create, complete upload, read, edit draft, dan confirm.
+
+## Pekerjaan async
+
+Analysis, OCR, dan export tidak harus selesai pada request awal. Create endpoint mengembalikan `202 Accepted` atau resource berstatus antre. Client membaca status resource sampai terminal. Analysis juga menyediakan Server-Sent Events.
+
+Untuk SSE, simpan `event_id` terakhir dan kirim sebagai `Last-Event-ID` ketika menyambung kembali. Event disimpan ke PostgreSQL sebelum dipublikasikan; polling status tetap menjadi fallback otoritatif ketika stream terputus.
+
+## Error dan partial result
+
+Error mempunyai machine-readable code, pesan aman, detail field bila relevan, dan correlation ID. Jangan menampilkan trace internal kepada pengguna. `409 EDUCATION_PREREQUISITE_NOT_MET` menyatakan modul wajib belum selesai, bukan kegagalan server.
+
+Status `partial` adalah output yang sah ketika sebagian evidence atau provider tidak tersedia. Client harus menampilkan warning dan limitation dari server, tanpa mengisi nilai yang hilang atau mengubahnya menjadi sukses.
+
+## Referensi endpoint
+
+Bagian [Referensi endpoint](./referensi) dibangkitkan dari snapshot OpenAPI backend. Playground interaktif dinonaktifkan pada dokumentasi publik agar contoh tidak mengirim request ke environment produksi secara tidak sengaja.

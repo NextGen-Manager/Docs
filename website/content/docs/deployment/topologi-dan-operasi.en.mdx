@@ -1,0 +1,63 @@
+---
+title: Topology and operations
+description: Deployment of the documentation site, frontend, API, workers, storage, and operational checks.
+---
+
+The documentation site and frontend can be built as two separate Vercel projects. The backend is not a single stateless function: the API, Celery worker, Celery beat, PostgreSQL, Redis, private object storage, and trace volume have different lifecycles and operational requirements.
+
+## Documentation site
+
+Create a Vercel project from the `Docs` repository with `website` as the Root Directory. Use the Next.js framework preset and the `simumarket-docs.vercel.app` domain.
+
+Build settings:
+
+```text
+Install Command: npm install
+Build Command: npm run build
+Output: Next.js default
+```
+
+The site needs no runtime secrets. The `openapi/simumarket-v1.json` snapshot is bundled at build time and the public playground is disabled. After a backend contract change, export a new snapshot, run `npm run docs:generate`, and verify language parity and the build before deployment.
+
+## Frontend and backend
+
+The frontend calls the backend through a server-side proxy and never exposes provider credentials. Production requires explicit HTTPS origins in CORS, `Secure` cookies, a unique JWT secret, and the correct backend URL.
+
+The minimum backend topology is:
+
+```text
+Internet
+  -> frontend
+  -> API
+     -> PostgreSQL
+     -> Redis -> worker and beat
+     -> private object storage
+     -> external providers from the worker
+```
+
+The API and workers must use the same application revision. Run migrations once before traffic uses the new schema. Analysis and artifact workers use separate queues so OCR or PDF jobs do not block API requests.
+
+## Secrets and private data
+
+- Store JWT secrets, provider keys, and object-storage credentials in the platform secret manager.
+- Never put secrets in `NEXT_PUBLIC_*` variables, repositories, images, logs, or documentation.
+- Receipt and export buckets remain private; browsers access them only through short-lived signed URLs.
+- OASIS traces and receipt images have retention jobs and must never enter public backups.
+- Production without a Gemini key must report the provider as unavailable, never enable the fake adapter.
+
+## Health and observability
+
+`GET /v1/health` checks the API process. `GET /v1/ready` is the readiness check for critical dependencies. Monitor queue depth, oldest job age, lease recovery, failure codes, OCR latency, provider usage, and retention deletion.
+
+A correlation ID follows requests, events, tasks, and logs. Logs exclude cookies, raw receipt text, free-form user notes, complete signed URLs, and sensitive prompt payloads.
+
+## Post-deployment checks
+
+1. Open both documentation locales and test the language switch.
+2. Test register, login, refresh, and logout with production cookies.
+3. Run an analysis without assuming the provider is available; inspect `partial` and warnings.
+4. Test SSE reconnection with `Last-Event-ID`.
+5. Upload a non-private receipt fixture, review the draft, confirm once, and verify idempotency.
+6. Create a PDF, download it through a signed URL, then verify expiry and tenant isolation.
+
+Platform references: [Vercel for Next.js](https://vercel.com/docs/frameworks/full-stack/nextjs) and [Fumadocs deployment](https://www.fumadocs.dev/docs/ui/deploying).

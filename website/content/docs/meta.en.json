@@ -1,0 +1,14 @@
+{
+  "title": "SimuMarket AI",
+  "pages": [
+    "index",
+    "pengantar",
+    "panduan-pengguna",
+    "setup-developer",
+    "arsitektur",
+    "engineering",
+    "api",
+    "deployment",
+    "keputusan"
+  ]
+}

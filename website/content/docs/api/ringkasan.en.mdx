@@ -1,0 +1,42 @@
+---
+title: API overview
+description: Transport conventions, authentication, idempotency, asynchronous jobs, and errors in the SimuMarket AI API.
+---
+
+The SimuMarket AI HTTP API uses the `/v1` prefix. An OpenAPI schema exported from FastAPI is the source for endpoint and schema reference on this site. The base URL depends on the deployment environment.
+
+## Conventions
+
+| Area | Format |
+|---|---|
+| Content type | `application/json`, except SSE and direct object-storage uploads |
+| Money | Integer IDR, for example `49000`, never `49000.0` |
+| Time | ISO 8601 in UTC |
+| Resource IDs | UUID |
+| Authentication | Access and refresh tokens in `HttpOnly` cookies |
+| Correlation | `X-Correlation-ID` for request tracing |
+| Retried creates | `Idempotency-Key` on retryable operations |
+
+Browsers must send cookie credentials on cross-origin requests. Tokens are not stored in `localStorage`. A successful refresh rotates the refresh token and invalidates the previous version.
+
+## Business scope and RBAC
+
+Roles belong to a user-business membership, not to a user globally. An `owner` manages the business profile, products, members, analyses, and reports. A `cashier` can only record transactions for a business where they hold membership. Resources from another tenant return `404` so their existence is not disclosed.
+
+Business-scoped endpoints accept `business_id` through query parameters or the request body as defined by their schema. Every receipt-import endpoint requires the `business_id` query parameter at each step, including create, upload completion, read, draft edit, and confirmation.
+
+## Asynchronous work
+
+Analysis, OCR, and export do not have to finish during the initial request. A create endpoint returns `202 Accepted` or a queued resource. The client reads resource status until it becomes terminal. Analysis also provides Server-Sent Events.
+
+For SSE, retain the most recent `event_id` and send it as `Last-Event-ID` when reconnecting. Events are persisted to PostgreSQL before publication; status polling remains the authoritative fallback when the stream disconnects.
+
+## Errors and partial results
+
+Errors contain a machine-readable code, safe message, field details when relevant, and a correlation ID. Internal traces must not be shown to users. `409 EDUCATION_PREREQUISITE_NOT_MET` means required education is incomplete, not that the server failed.
+
+A `partial` status is a valid output when some evidence or a provider is unavailable. Clients must display server warnings and limitations without filling missing values or converting the state into success.
+
+## Endpoint reference
+
+The [Endpoint reference](./referensi) is generated from a backend OpenAPI snapshot. The interactive playground is disabled in the public documentation to prevent examples from accidentally sending requests to a production environment.

@@ -1,0 +1,43 @@
+---
+title: System architecture
+description: Components, bounded contexts, state, storage, and reliability in SimuMarket AI.
+---
+
+```text
+Next.js browser
+  -> FastAPI /v1
+     -> PostgreSQL
+     -> Redis -> Celery worker
+     -> private S3-compatible storage
+     -> evidence provider
+     -> OASIS/CAMEL adapter -> Gemini
+```
+
+## Component responsibilities
+
+| Component | Responsibility |
+|---|---|
+| Next.js | Input, route guards, job status, and server-output rendering |
+| FastAPI | Authentication, validation, authorisation, and use-case APIs |
+| PostgreSQL | System of record for identity, businesses, transactions, evidence, analyses, events, and artifact metadata |
+| Redis | Celery broker and event transport, not the system of record |
+| Worker | Analysis, OASIS, OCR, PDF, recovery, and retention jobs |
+| Object storage | Private receipt photos and PDFs accessed through signed URLs |
+| OASIS trace | Isolated per-attempt artifacts with explicit retention |
+
+## Analysis pipeline
+
+`POST /v1/analyses` validates input, stores and commits a `queued` run, then dispatches a task. The worker executes stages in order. State is persisted before event publication. Recovery leases prevent a live task from being reclaimed too early.
+
+Every run records an immutable input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, and agent artifacts.
+
+## Reliability
+
+- Idempotency prevents duplicate transactions, runs, and exports.
+- Another tenant's resource appears as `404`.
+- SSE resumes through `Last-Event-ID`.
+- Polling reads the authoritative snapshot when SSE fails.
+- Safe failure codes remain separate from internal traces.
+- Signed URLs are short-lived while objects stay private.
+- Retention jobs delete artifacts without hiding deletion failures.
+

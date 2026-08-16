@@ -1,0 +1,39 @@
+---
+title: Evidence, finance, dan scoring
+description: Provenance, formula uang, Launch Readiness Score, dan confidence.
+---
+
+## Evidence lebih dulu
+
+Setiap angka pasar membutuhkan metric, value, unit, geography, source, waktu observasi, waktu retrieval, quality, dan limitation. Missing evidence dinyatakan sebagai missing, bukan diganti angka dari LLM.
+
+Runtime produksi saat ini memakai unavailable evidence provider. Fixture provider hanya tersedia pada test dan ditolak pada staging/production. Karena itu, run tanpa provider pasar dapat selesai `partial` dan dimension terkait menjadi `not_scorable`.
+
+## Finance deterministik
+
+```text
+contribution_margin_per_unit = selling_price - variable_cost_per_unit
+bep_units_month = fixed_cost_month / contribution_margin_per_unit
+monthly_revenue = volume_day * operating_days * selling_price
+monthly_operating_profit =
+  volume_day * operating_days * contribution_margin_per_unit - fixed_cost_month
+payback_months = initial_investment / monthly_operating_profit
+```
+
+Uang adalah integer rupiah. Rasio memakai `Decimal` dan hasil bulan dibulatkan ke atas. Contribution margin non-positif membuat BEP dan payback tidak terdefinisi. Operating profit non-positif membuat payback tidak terdefinisi.
+
+## Launch Readiness Score
+
+```text
+LRS = 0.20 * market_saturation
+    + 0.25 * demand_potential
+    + 0.15 * price_positioning
+    + 0.40 * operational_readiness
+```
+
+Rule aktif adalah `lrs-v0.2-unvalidated`. Dimension tanpa evidence tidak menerima nilai default. Total score ditahan ketika dimension yang diwajibkan tidak dapat dinilai, sehingga bobot tidak dialihkan diam-diam.
+
+## Confidence terpisah
+
+Evidence Confidence menilai source quality, freshness, geographic fit, sample sufficiency, dan cross-source consistency. Confidence tidak menaikkan atau menurunkan score secara tersembunyi. Keduanya ditampilkan berdampingan dengan missing evidence serta limitation.
+

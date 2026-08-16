@@ -1,0 +1,43 @@
+---
+title: Dokumentasi SimuMarket AI
+description: Panduan penggunaan, arsitektur, API, dan pengembangan SimuMarket AI.
+---
+
+SimuMarket AI adalah Decision Support System untuk calon dan pelaku UMKM F&B di Jabodetabek. Sistem membantu pengguna mempelajari dasar usaha, menilai rencana sebelum diluncurkan, mencatat transaksi setelah usaha berjalan, dan memahami pola operasionalnya.
+
+> Hasil analisis adalah alat bantu keputusan, bukan jaminan keberhasilan usaha.
+
+## Pilih jalurmu
+
+<Cards>
+  <Card title="Saya ingin memakai produknya" description="Ikuti alur Market Analysis, transaksi, struk, dan laporan." href="/docs/panduan-pengguna/analisis-pasar" />
+  <Card title="Saya ingin menjalankan codebase" description="Siapkan tiga repository dan seluruh service lokal." href="/docs/setup-developer/end-to-end" />
+  <Card title="Saya ingin memahami arsitektur" description="Lihat batas OASIS, deterministic engine, evidence, dan worker." href="/docs/arsitektur/sistem" />
+  <Card title="Saya ingin melihat kontrak API" description="Pelajari konvensi dan endpoint API v1." href="/docs/api/ringkasan" />
+</Cards>
+
+## Kejujuran status
+
+Dokumentasi membedakan lima keadaan:
+
+| Label | Makna |
+|---|---|
+| Implemented | Ada pada baseline kode dan mempunyai verifikasi |
+| Demo | Menggunakan seed atau interactive prototype |
+| Planned | Sudah dirancang tetapi belum tersedia pada baseline |
+| Unavailable | Integrasi sengaja menyatakan tidak tersedia |
+| Unvalidated | Sudah berjalan, tetapi parameter atau kualitasnya belum tervalidasi pakar |
+
+Dokumentasi ini hanya menerbitkan kemampuan produk, kontrak, dan limitation yang relevan bagi pengguna maupun pengembang.
+
+## Baseline yang didokumentasikan
+
+Konten diverifikasi pada 16 Agustus 2026 terhadap frontend commit `ac358ee`, backend commit `2ec6bb8`, dan dokumen teknis repository Docs. Integrasi Gemini live belum diuji tanpa API key. Fake OASIS adapter digunakan untuk test deterministik.
+
+## Aturan yang tidak berubah
+
+1. LLM tidak menjadi sumber angka otoritatif.
+2. Setiap angka faktual mempunyai provenance.
+3. Kegagalan parsial tetap ditampilkan sebagai `partial`.
+4. Uang menggunakan integer rupiah.
+5. Data pelanggan dan teks struk mentah tidak dikirim ke provider LLM.

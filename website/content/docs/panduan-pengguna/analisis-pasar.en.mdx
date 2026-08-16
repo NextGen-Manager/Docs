@@ -1,0 +1,49 @@
+---
+title: Running a Market Analysis
+description: From education and plan inputs to responsible report interpretation.
+---
+
+Market Analysis evaluates an F&B plan in Greater Jakarta. An analysis is not tied to one active business, so users can test a concept before creating an operating business.
+
+## Before you start
+
+Prepare:
+
+- the business type and concept name;
+- a location point, area, and analysis radius;
+- average selling price and cost of goods per unit;
+- initial capital and monthly fixed costs;
+- operating days, capacity, and a daily-volume range;
+- sales channels and the value proposition.
+
+All monetary values are integer rupiah. If a critical financial input is missing, the system must not present a precise break-even figure as though the data were complete.
+
+## User flow
+
+1. Open **Analysis** and enter the business plan.
+2. The system checks the relevant education prerequisites.
+3. Complete any required module.
+4. Submit the analysis. The API creates a `queued` run and returns immediately.
+5. The progress page consumes SSE events. If SSE fails, the frontend polls the authoritative snapshot every three seconds.
+6. Open the report after the run reaches a terminal state.
+
+The main states are `queued`, `collecting_evidence`, `building_context`, `simulating`, `calculating_finance`, `scoring`, `composing_report`, and `validating_report`. Every transition is stored in PostgreSQL before Redis publication.
+
+## Reading the report
+
+Never read the score in isolation. Review it together with:
+
+- the Launch Readiness Score and `rule_version`;
+- each dimension status;
+- Evidence Confidence and missing evidence;
+- financial assumptions, break-even, revenue, profit, and payback;
+- risks, limitations, and recommendations;
+- synthetic-simulation status;
+- the disclaimer.
+
+The active interpretation is highly feasible from 80, feasible with mitigation from 65, needs reassessment from 50, and not recommended below 50. The ranges and rule thresholds remain `unvalidated` pending expert review and calibration.
+
+## When the result is `partial`
+
+A partial report can still contain valid finance or evidence sections. A failed section remains visible as `unavailable`. Do not infer a missing score and do not treat synthetic personas as a market survey.
+

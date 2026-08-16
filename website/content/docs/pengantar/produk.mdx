@@ -1,0 +1,42 @@
+---
+title: Mengenal SimuMarket AI
+description: Masalah, lifecycle, modul, dan cara sistem membantu UMKM F&B.
+---
+
+SimuMarket AI melayani dua tahap perjalanan usaha F&B.
+
+## Sebelum usaha dibuka
+
+Calon pengusaha memasukkan konsep, lokasi target di Jabodetabek, harga, biaya, modal, kapasitas, dan perkiraan volume. Sistem menggabungkan evidence pasar yang tersedia, simulasi synthetic persona, perhitungan finansial deterministik, dan scoring versioned.
+
+Pertanyaan yang dibantu adalah:
+
+> Apakah ide F&B ini, pada harga dan lokasi tersebut, cukup layak untuk dilanjutkan dan risiko apa yang harus dimitigasi?
+
+## Setelah usaha berjalan
+
+Owner menyiapkan usaha dan produk. Owner atau cashier dapat mencatat penjualan. Setelah transaksi mencakup tujuh tanggal lokal berbeda di zona `Asia/Jakarta`, sistem membuka analytics dasar seperti penjualan harian, performa produk, dan insight rule-based.
+
+Pertanyaan yang dibantu adalah:
+
+> Apa yang terjual, apa yang belum cukup terekspos, dan hal operasional apa yang perlu dievaluasi?
+
+## Tiga modul utama
+
+| Modul | Fungsi |
+|---|---|
+| Edukasi F&B | Menjelaskan legalitas, harga, bahan baku, dan akuisisi pelanggan |
+| Market Analysis | Menghasilkan readiness report dengan evidence, finance, risiko, dan rekomendasi |
+| Transaction Management | Mengelola produk, transaksi, receipt review, analytics, dan export |
+
+Lifecycle produk diringkas sebagai `Learn -> Analyse -> Launch -> Record -> Understand -> Improve`.
+
+## Empat council OASIS
+
+- Market Analyst menilai evidence kompetitor dan kondisi pasar.
+- Customer Persona menjalankan respons synthetic persona terhadap skenario.
+- Finance mengkritik kelayakan finansial tetapi tidak menjadi kalkulator.
+- Report menyusun narasi dari artifact yang sudah divalidasi.
+
+Finance, scoring, dan agregasi transaksi tetap dihitung oleh kode deterministik di luar keputusan bebas LLM.
+

@@ -1,0 +1,43 @@
+{
+  "name": "simumarket-ai-docs",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "docs:generate": "tsx scripts/generate-openapi.ts",
+    "docs:export-openapi": "node scripts/export-openapi.mjs",
+    "docs:validate": "node scripts/validate-content.mjs",
+    "start": "next start",
+    "types:check": "next typegen && tsc --noEmit",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "cnfast": "^0.1.0",
+    "fumadocs-core": "16.14.4",
+    "fumadocs-mdx": "15.2.3",
+    "fumadocs-openapi": "^11.2.4",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.14.4",
+    "lucide-react": "^1.31.0",
+    "next": "16.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "shiki": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "16.3.0",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  }
+}
