@@ -1,26 +1,123 @@
 ---
 title: Sumber data, keuangan, dan penilaian
-description: Asal data, rumus keuangan, Launch Readiness Score, dan tingkat keyakinan.
+description: Bentuk evidence record, missing evidence, Evidence Confidence, formula finansial, Launch Readiness Score, dan cara membacanya.
 ---
 
-## Data dan sumber
+Tiga hal dipisahkan dengan sengaja: fakta yang dikumpulkan, hitungan yang dilakukan atasnya, dan penilaian yang diturunkan dari keduanya. Pemisahan ini membuat satu bagian dapat gagal tanpa merusak dua bagian lainnya.
 
-Setiap angka pasar membutuhkan metric, value, unit, geography, source, waktu observasi, waktu retrieval, quality, dan limitation. Missing evidence dinyatakan sebagai missing, bukan diganti angka dari LLM.
+Alur berikut membaca dari kiri ke kanan: sumber data menjadi evidence record berprovenance atau dicatat sebagai missing, input finansial pengguna masuk ke engine deterministik, lalu keduanya bertemu di scoring. Cabang bawah adalah jalur kejujuran: evidence yang hilang membuat dimension tidak dapat dinilai dan menahan total skor, bukan diisi nilai bawaan.
 
-Jika evidence yang diperlukan tidak tersedia, run dapat selesai `partial` dan dimension terkait menjadi `not_scorable`.
+<Mermaid
+  title="Diagram 1. Pipeline evidence, finance, dan scoring, termasuk jalur ketika evidence tidak tersedia."
+  chart={`flowchart LR
+  SRC["Sumber data pasar"] --> ADP["Evidence adapter"]
+  ADP --> REC(["Evidence record berprovenance"])
+  ADP --> MISS(["Missing evidence"])
+  REC --> SNAP["Evidence snapshot per run"]
+  MISS --> SNAP
+  SNAP --> CONF["Evidence Confidence"]
+  SNAP --> SC["Scoring engine lrs-v0.2-unvalidated"]
+  FIN["Input finansial pengguna"] --> FE["Finance engine deterministik"]
+  FE --> SCN(["Skenario conservative, base, optimistic"])
+  SCN --> SC
+  SC --> DIM(["Empat dimension score"])
+  DIM --> LRS(["Launch Readiness Score"])
+  MISS --> NS["Dimension tidak dapat dinilai"]
+  NS --> HOLD["Total skor ditahan"]
+  CONF --> REP["Laporan dengan disclaimer"]
+  LRS --> REP
+  SCN --> REP
+  HOLD --> REP`}
+/>
 
-## Perhitungan finansial
+## Bentuk evidence record
+
+Setiap data point pasar dibungkus sebagai evidence record. Angka tanpa provenance tidak boleh masuk laporan final sebagai fakta.
+
+```json
+{
+  "metric": "competitor_count",
+  "value": 18,
+  "unit": "places",
+  "geography": {"type": "radius", "meters": 1500, "center_id": "jabodetabek-area-id"},
+  "category_mapping_version": "fnb-taxonomy-v1",
+  "source": "openstreetmap",
+  "observed_at": "2026-08-01T00:00:00Z",
+  "retrieved_at": "2026-08-05T00:00:00Z",
+  "quality": {"coverage": "unknown", "freshness": "recent", "confidence": 0.55},
+  "limitations": ["POI completeness is not guaranteed"]
+}
+```
+
+Contoh di atas bersifat sintetis dan hanya menunjukkan bentuk record.
+
+| Bagian | Kenapa wajib |
+|---|---|
+| `value` dan `unit` | Angka tanpa satuan tidak dapat dibandingkan |
+| `geography` | Hitungan kompetitor tidak berarti tanpa radius atau batas wilayah |
+| `category_mapping_version` | Jumlah kompetitor tidak boleh dibandingkan lintas versi taxonomy |
+| `observed_at` dan `retrieved_at` | Membedakan umur data dari waktu pengambilan |
+| `quality` | Coverage, freshness, dan confidence per record |
+| `limitations` | Batasan yang ikut terbaca oleh pengguna |
+
+## Missing evidence
+
+Data yang tidak tersedia dinyatakan hilang, bukan diganti angka dari LLM, rata-rata nasional, atau tebakan yang terdengar wajar.
+
+Konsekuensinya berjenjang:
+
+1. Metric yang hilang tercatat pada snapshot beserta alasannya.
+2. Dimension yang bergantung pada metric tersebut dapat menjadi tidak dapat dinilai.
+3. Total skor ditahan ketika dimension yang diwajibkan tidak dapat dinilai, sehingga bobotnya tidak dialihkan diam-diam ke dimension lain.
+4. Run dapat selesai berstatus `partial`.
+
+Pada deployment produksi saat ini, provider evidence pasar belum dipilih dan runtime mengembalikan seluruh metric yang diminta sebagai missing. Itu perilaku yang disengaja, bukan kegagalan yang disembunyikan.
+
+## Evidence Confidence
+
+Evidence Confidence menilai kualitas bahan, terpisah dari kelayakan rencana.
+
+```text
+confidence = weighted_mean(
+  source_quality,
+  freshness,
+  geographic_fit,
+  sample_sufficiency,
+  cross_source_consistency
+)
+```
+
+| Nilai | Label | Cara membaca |
+|---|---|---|
+| 0.75 sampai 1.00 | Tinggi | Cukup untuk menyusun shortlist, tetap perlu cek lapangan |
+| 0.50 sampai 0.74 | Sedang | Baca bersama missing evidence dan sensitivitas asumsi |
+| Di bawah 0.50 | Rendah | Prioritaskan pengumpulan data sebelum mengambil keputusan |
+
+Cutoff di atas masih draft dan perlu diuji. Confidence tidak menaikkan atau menurunkan skor secara tersembunyi; keduanya ditampilkan berdampingan bersama daftar evidence yang hilang.
+
+## Formula finansial
 
 ```text
 contribution_margin_per_unit = selling_price - variable_cost_per_unit
-bep_units_month = fixed_cost_month / contribution_margin_per_unit
-monthly_revenue = volume_day * operating_days * selling_price
+contribution_margin_ratio    = contribution_margin_per_unit / selling_price
+bep_units_month              = fixed_cost_month / contribution_margin_per_unit
+bep_revenue_month            = fixed_cost_month / contribution_margin_ratio
+monthly_revenue              = volume_day * operating_days * selling_price
 monthly_operating_profit =
   volume_day * operating_days * contribution_margin_per_unit - fixed_cost_month
-payback_months = initial_investment / monthly_operating_profit
+payback_months               = initial_investment / monthly_operating_profit
 ```
 
-Uang adalah integer rupiah. Rasio memakai `Decimal` dan hasil bulan dibulatkan ke atas. Contribution margin non-positif membuat BEP dan payback tidak terdefinisi. Operating profit non-positif membuat payback tidak terdefinisi.
+Aturan yang menyertainya:
+
+- uang adalah integer rupiah; tidak ada `float` di jalur uang;
+- rasio memakai `Decimal` dan hasil dalam bulan dibulatkan ke atas;
+- seluruh nilai divalidasi non-negatif dan dalam currency yang sama;
+- bila contribution margin nol atau negatif, BEP dan payback **tidak terdefinisi** dan disertai warning, bukan diisi nol atau tak hingga;
+- bila operating profit bulanan nol atau negatif, payback tidak terdefinisi;
+- pajak, depresiasi, gaji pemilik, pembiayaan, spoilage, fee platform, dan promo dinyatakan secara eksplisit termasuk atau tidak termasuk.
+
+Kalkulator dijalankan untuk tiga skenario: conservative, base, dan optimistic. Nilainya diambil dari rentang input pengguna, bukan dari persentase yang dikarang di dalam prompt.
 
 ## Launch Readiness Score
 
@@ -31,8 +128,38 @@ LRS = 0.20 * market_saturation
     + 0.40 * operational_readiness
 ```
 
-Rule aktif adalah `lrs-v0.2-unvalidated`. Dimension tanpa evidence tidak menerima nilai default. Total score ditahan ketika dimension yang diwajibkan tidak dapat dinilai, sehingga bobot tidak dialihkan diam-diam.
+| Dimension | Bobot | Contoh masukan |
+|---|---:|---|
+| Market Saturation | 20% | Kepadatan kompetitor, pangsa kategori sejenis, definisi catchment |
+| Demand Potential | 25% | Proxy populasi atau pekerja, occasion yang relevan, aksesibilitas, sinyal persona sintetis |
+| Price Positioning | 15% | Persentil harga terhadap pembanding, viabilitas contribution margin, rentang harga yang dapat diterima |
+| Operational Readiness | 40% | Kelengkapan biaya, contribution margin positif, kapasitas terhadap volume BEP, runway, kesiapan legal dan pemasok |
 
-## Tingkat keyakinan data
+Setiap dimension score berada pada rentang 0 sampai 100 dan hanya berasal dari rule versioned.
 
-Evidence Confidence menilai source quality, freshness, geographic fit, sample sufficiency, dan cross-source consistency. Confidence tidak menaikkan atau menurunkan score secara tersembunyi. Keduanya ditampilkan berdampingan dengan missing evidence serta limitation.
+## Status validasi
+
+Rule set aktif adalah `lrs-v0.2-unvalidated`. Bobot 20/25/15/40 ditetapkan product owner pada 11 Agustus 2026 dan **belum melalui expert review maupun calibration**. Threshold interpretasi juga masih berstatus hipotesis. Dokumentasi ini tidak menyatakan scoring sudah tervalidasi, dan label `unvalidated` ikut tampil pada output yang relevan.
+
+Rule set lama `lrs-v0.1-unvalidated` dengan bobot 30/25/25/20 tetap disimpan agar laporan historis dapat direproduksi. Laporan lama tidak dihitung ulang dengan bobot baru. Sinyal persona sintetis dibatasi sebagai satu feature berconfidence rendah sampai calibration selesai, dan threshold seperti "BEP di bawah tiga bulan" tidak dipakai sampai divalidasi pakar.
+
+Perubahan bobot atau threshold membuat versi rule baru dan membutuhkan ADR, fixture pembanding, serta persetujuan product owner.
+
+## Membaca skor
+
+| Rentang | Interpretasi |
+|---|---:|
+| 80 ke atas | Sangat layak |
+| 65 sampai 79 | Layak dengan mitigasi |
+| 50 sampai 64 | Perlu evaluasi ulang |
+| Di bawah 50 | Tidak disarankan |
+
+Skor paling berguna untuk membandingkan skenario yang dibuat pengguna sendiri dengan asumsi yang berubah satu per satu. Ia bukan ukuran mutlak kelayakan usaha, dan skor tinggi dengan confidence rendah berarti asumsinya rapi sementara buktinya tipis.
+
+Disclaimer yang sama muncul pada laporan di layar dan pada PDF: hasil adalah alat bantu keputusan, bukan jaminan keberhasilan usaha.
+
+## Analytics transaksi
+
+Agregat transaksi memakai query dan rule deterministik, bukan model. Gate awal membutuhkan transaksi pada tujuh tanggal lokal berbeda menurut zona `Asia/Jakarta`; sebelum gate terpenuhi endpoint mengembalikan status `collecting` tanpa agregat sementara.
+
+Setiap insight menyebut observation window, timezone, dan `rule_version`. Hanya transaksi berstatus confirmed yang dihitung, sehingga kesalahan OCR tidak masuk ke dashboard.

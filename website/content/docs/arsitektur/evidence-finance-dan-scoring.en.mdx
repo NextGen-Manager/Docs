@@ -1,26 +1,123 @@
 ---
-title: Evidence, finance, and scoring
-description: Provenance, money formulas, the Launch Readiness Score, and confidence.
+title: Data sources, finance, and scoring
+description: Evidence record shape, missing evidence, Evidence Confidence, financial formulas, the Launch Readiness Score, and how to read it.
 ---
 
-## Data and sources
+Three things are separated deliberately: the facts collected, the calculations performed on them, and the judgement derived from both. That separation lets one part fail without corrupting the other two.
 
-Every market number requires a metric, value, unit, geography, source, observation time, retrieval time, quality, and limitations. Missing evidence remains missing instead of being replaced by an LLM-generated value.
+The flow below reads left to right: sources become evidence records with provenance or are recorded as missing, the user's financial input enters the deterministic engine, and the two meet at scoring. The lower branch is the honesty path: missing evidence makes a dimension unscorable and withholds the total score rather than filling in a default.
 
-If required evidence is unavailable, a run can finish as `partial`, with affected dimensions marked `not_scorable`.
+<Mermaid
+  title="Diagram 1. The evidence, finance, and scoring pipeline, including the path taken when evidence is unavailable."
+  chart={`flowchart LR
+  SRC["Market data sources"] --> ADP["Evidence adapter"]
+  ADP --> REC(["Evidence record with provenance"])
+  ADP --> MISS(["Missing evidence"])
+  REC --> SNAP["Per-run evidence snapshot"]
+  MISS --> SNAP
+  SNAP --> CONF["Evidence Confidence"]
+  SNAP --> SC["Scoring engine lrs-v0.2-unvalidated"]
+  FIN["User financial input"] --> FE["Deterministic finance engine"]
+  FE --> SCN(["Conservative, base, optimistic scenarios"])
+  SCN --> SC
+  SC --> DIM(["Four dimension scores"])
+  DIM --> LRS(["Launch Readiness Score"])
+  MISS --> NS["Dimension not scorable"]
+  NS --> HOLD["Total score withheld"]
+  CONF --> REP["Report with disclaimer"]
+  LRS --> REP
+  SCN --> REP
+  HOLD --> REP`}
+/>
 
-## Financial calculations
+## Evidence record shape
+
+Every market data point is wrapped as an evidence record. A number without provenance may not enter the final report as a fact.
+
+```json
+{
+  "metric": "competitor_count",
+  "value": 18,
+  "unit": "places",
+  "geography": {"type": "radius", "meters": 1500, "center_id": "jabodetabek-area-id"},
+  "category_mapping_version": "fnb-taxonomy-v1",
+  "source": "openstreetmap",
+  "observed_at": "2026-08-01T00:00:00Z",
+  "retrieved_at": "2026-08-05T00:00:00Z",
+  "quality": {"coverage": "unknown", "freshness": "recent", "confidence": 0.55},
+  "limitations": ["POI completeness is not guaranteed"]
+}
+```
+
+The example above is synthetic and only illustrates the record shape.
+
+| Part | Why it is required |
+|---|---|
+| `value` and `unit` | A number without a unit cannot be compared |
+| `geography` | A competitor count means nothing without a radius or boundary |
+| `category_mapping_version` | Competitor counts must not be compared across taxonomy versions |
+| `observed_at` and `retrieved_at` | Separates the age of the data from when it was fetched |
+| `quality` | Coverage, freshness, and confidence per record |
+| `limitations` | Constraints the user gets to read too |
+
+## Missing evidence
+
+Unavailable data is reported as missing, never substituted with an LLM figure, a national average, or a plausible-sounding guess.
+
+The consequences cascade:
+
+1. The missing metric is recorded on the snapshot together with its reason.
+2. A dimension that depends on that metric can become unscorable.
+3. The total score is withheld when a required dimension cannot be scored, so its weight is not silently shifted onto other dimensions.
+4. The run can finish as `partial`.
+
+In the current production deployment no market evidence provider has been selected, and the runtime returns every requested metric as missing. That is deliberate behaviour, not a hidden failure.
+
+## Evidence Confidence
+
+Evidence Confidence rates the quality of the inputs, separately from the viability of the plan.
+
+```text
+confidence = weighted_mean(
+  source_quality,
+  freshness,
+  geographic_fit,
+  sample_sufficiency,
+  cross_source_consistency
+)
+```
+
+| Value | Label | How to read it |
+|---|---|---|
+| 0.75 to 1.00 | High | Enough to build a shortlist, field checks still required |
+| 0.50 to 0.74 | Medium | Read alongside missing evidence and assumption sensitivity |
+| Below 0.50 | Low | Prioritise data collection before deciding |
+
+These cutoffs are still a draft and need testing. Confidence never raises or lowers the score behind the scenes; the two appear side by side with the list of missing evidence.
+
+## Financial formulas
 
 ```text
 contribution_margin_per_unit = selling_price - variable_cost_per_unit
-bep_units_month = fixed_cost_month / contribution_margin_per_unit
-monthly_revenue = volume_day * operating_days * selling_price
+contribution_margin_ratio    = contribution_margin_per_unit / selling_price
+bep_units_month              = fixed_cost_month / contribution_margin_per_unit
+bep_revenue_month            = fixed_cost_month / contribution_margin_ratio
+monthly_revenue              = volume_day * operating_days * selling_price
 monthly_operating_profit =
   volume_day * operating_days * contribution_margin_per_unit - fixed_cost_month
-payback_months = initial_investment / monthly_operating_profit
+payback_months               = initial_investment / monthly_operating_profit
 ```
 
-Money is integer rupiah. Ratios use `Decimal`, and month estimates round upward. A non-positive contribution margin makes break-even and payback undefined. Non-positive operating profit makes payback undefined.
+The rules that come with them:
+
+- money is integer rupiah; there is no `float` anywhere on the money path;
+- ratios use `Decimal`, and month results are rounded up;
+- all values are validated as non-negative and in the same currency;
+- if the contribution margin is zero or negative, break-even and payback are **undefined** and carry a warning; they are not filled with zero or infinity;
+- if monthly operating profit is zero or negative, payback is undefined;
+- tax, depreciation, owner salary, financing, spoilage, platform fees, and promotions are explicitly stated as included or excluded.
+
+The calculator runs for three scenarios: conservative, base, and optimistic. The values come from the user's input ranges, not from percentages invented inside a prompt.
 
 ## Launch Readiness Score
 
@@ -31,8 +128,38 @@ LRS = 0.20 * market_saturation
     + 0.40 * operational_readiness
 ```
 
-The active rule set is `lrs-v0.2-unvalidated`. A dimension without evidence receives no default. The total score is withheld when a required dimension cannot be scored, preventing silent weight redistribution.
+| Dimension | Weight | Example inputs |
+|---|---:|---|
+| Market Saturation | 20% | Competitor density, same-category share, catchment definition |
+| Demand Potential | 25% | Population or worker proxy, relevant occasions, accessibility, synthetic persona signal |
+| Price Positioning | 15% | Price percentile against comparables, contribution margin viability, acceptable price band |
+| Operational Readiness | 40% | Cost completeness, positive contribution margin, capacity versus break-even volume, runway, legal and supplier readiness |
 
-## Evidence confidence
+Each dimension score sits between 0 and 100 and comes only from versioned rules.
 
-Evidence Confidence assesses source quality, freshness, geographic fit, sample sufficiency, and cross-source consistency. Confidence never secretly raises or lowers the readiness score. Both are displayed with missing evidence and limitations.
+## Validation status
+
+The active rule set is `lrs-v0.2-unvalidated`. The 20/25/15/40 weights were set by the product owner on 11 August 2026 and have **not** gone through expert review or calibration. The interpretation thresholds remain hypotheses as well. This documentation does not claim the scoring is validated, and the `unvalidated` label travels with the relevant output.
+
+The older `lrs-v0.1-unvalidated` set with 30/25/25/20 weights is kept so historical reports remain reproducible. Old reports are not recomputed with the new weights. The synthetic persona signal is restricted to a single low-confidence feature until calibration is done, and thresholds such as "break-even under three months" are not used until expert validation exists.
+
+Changing a weight or threshold creates a new rule version and requires an ADR, comparison fixtures, and product owner approval.
+
+## Reading the score
+
+| Range | Interpretation |
+|---|---:|
+| 80 and above | Highly viable |
+| 65 to 79 | Viable with mitigation |
+| 50 to 64 | Needs reassessment |
+| Below 50 | Not recommended |
+
+The score is most useful for comparing scenarios you build yourself with one assumption changed at a time. It is not an absolute measure of viability, and a high score with low confidence means the assumptions are tidy while the evidence behind them is thin.
+
+The same disclaimer appears on the on-screen report and in the PDF: the result supports a decision and does not guarantee business success.
+
+## Transaction analytics
+
+Transaction aggregates use deterministic queries and rules, not a model. The initial gate requires transactions on seven distinct local dates in the `Asia/Jakarta` timezone; before the gate is met the endpoint returns `collecting` with no interim aggregates.
+
+Every insight states its observation window, timezone, and `rule_version`. Only confirmed transactions are counted, so an OCR error never reaches the dashboard.
