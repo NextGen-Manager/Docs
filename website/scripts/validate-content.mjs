@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { validateFrontmatter, validateMeta } from './lib/frontmatter.mjs';
 
 const contentRoot = path.resolve('content/docs');
 const errors = [];
@@ -70,6 +71,84 @@ function validateAbsoluteLinks(file, content, fileSet) {
   }
 }
 
+// A sidebar entry left behind after a page is renamed or deleted disappears
+// from navigation silently, so the entries are resolved against the filesystem.
+async function validateMetaTargets(file, relativePath, content) {
+  let meta;
+  try {
+    meta = JSON.parse(content);
+  } catch {
+    return;
+  }
+  if (!Array.isArray(meta?.pages)) return;
+
+  const english = path.basename(file) === 'meta.en.json';
+  const suffix = english ? '.en.mdx' : '.mdx';
+  const directory = path.dirname(file);
+
+  for (const page of meta.pages) {
+    if (typeof page !== 'string') continue;
+    // Fumadocs meta syntax: `...` rest, `z...a` reversed rest, `!name` exclude,
+    // `[Text](url)` external link, `---Name---` separator. None are files.
+    if (page.includes('...') || page.startsWith('!') || page.startsWith('[') || page.startsWith('---')) {
+      continue;
+    }
+    const target = path.join(directory, page);
+    const candidates = [
+      `${target}${suffix}`,
+      path.join(target, `index${suffix}`),
+      path.join(target, english ? 'meta.en.json' : 'meta.json'),
+    ];
+    if (!(await Promise.all(candidates.map(exists))).some(Boolean)) {
+      errors.push(`${relativePath}: entri navigasi \`${page}\` tidak mempunyai halaman`);
+    }
+  }
+}
+
+const diagrams = [];
+
+// Mermaid renders in the browser, so a syntax error would otherwise only show
+// up as a broken figure after deploy. Charts are collected here and parsed
+// below with the same engine the page uses.
+function collectDiagrams(file, content) {
+  const usages = content.matchAll(/<Mermaid\b([\s\S]*?)\/>/g);
+  for (const usage of usages) {
+    const props = usage[1];
+    const chart = props.match(/chart=\{`([\s\S]*?)`\}/);
+    const title = props.match(/title="([^"]+)"/);
+    const relative = path.relative(contentRoot, file);
+
+    if (!title) {
+      errors.push(`${relative}: diagram Mermaid tanpa title, teks alternatif wajib ada`);
+    }
+    if (!chart) {
+      errors.push(`${relative}: diagram Mermaid tanpa chart yang dapat dibaca`);
+      continue;
+    }
+    diagrams.push({ file: relative, chart: chart[1] });
+  }
+}
+
+async function validateDiagrams() {
+  if (diagrams.length === 0) return;
+
+  // Mermaid needs a DOM even to parse, hence jsdom in devDependencies.
+  const { JSDOM } = await import('jsdom');
+  const dom = new JSDOM('<!doctype html><html><body></body></html>');
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+
+  const mermaid = (await import('mermaid')).default;
+  for (const diagram of diagrams) {
+    try {
+      await mermaid.parse(diagram.chart);
+    } catch (error) {
+      const reason = String(error?.message ?? error).split('\n')[0];
+      errors.push(`${diagram.file}: sintaks Mermaid tidak valid, ${reason}`);
+    }
+  }
+}
+
 const files = await walk(contentRoot);
 const fileSet = new Set(files);
 
@@ -79,8 +158,17 @@ for (const file of files) {
     errors.push(`${path.relative(contentRoot, file)}: pasangan locale tidak ditemukan`);
   }
 
+  if (file.endsWith('.json')) {
+    const relative = path.relative(contentRoot, file);
+    const content = await readFile(file, 'utf8');
+    errors.push(...validateMeta(relative, content));
+    await validateMetaTargets(file, relative, content);
+    continue;
+  }
+
   if (!file.endsWith('.mdx')) continue;
   const content = await readFile(file, 'utf8');
+  errors.push(...validateFrontmatter(path.relative(contentRoot, file), content));
   if (/\b(?:phase|fase|handover|roadmap|sprint)\b|progress development/iu.test(content)) {
     errors.push(`${path.relative(contentRoot, file)}: istilah proses internal ditemukan`);
   }
@@ -89,7 +177,10 @@ for (const file of files) {
   }
   await validateRelativeLinks(file, content);
   validateAbsoluteLinks(file, content, fileSet);
+  collectDiagrams(file, content);
 }
+
+await validateDiagrams();
 
 const schema = JSON.parse(await readFile(path.resolve('openapi/simumarket-v1.json'), 'utf8'));
 const operationCount = Object.values(schema.paths).reduce(
@@ -115,5 +206,7 @@ if (errors.length > 0) {
   console.error(errors.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log(`Konten valid: ${files.length} file, ${operationCount} endpoint, dua locale lengkap.`);
+  console.log(
+    `Konten valid: ${files.length} file, ${operationCount} endpoint, ${diagrams.length} diagram Mermaid, dua locale lengkap.`,
+  );
 }
