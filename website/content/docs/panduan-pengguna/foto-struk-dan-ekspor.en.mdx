@@ -1,0 +1,101 @@
+---
+title: Receipt photos and exports
+description: Upload flow, OCR output, review and correction, transaction confirmation, private artifacts, retention, and PDF export.
+---
+
+Receipt photos are the input path most prone to error, which is why it is the strictest one. OCR output is always a draft. No final transaction is created without human confirmation.
+
+## Receipt import states
+
+```text
+created -> uploading -> queued -> preprocessing -> extracting
+  -> ready_for_review -> confirmed -> committed
+  | failed | cancelled
+```
+
+Every receipt import endpoint carries `business_id`, including creating the session, completing the upload, reading status, editing the draft, and confirming.
+
+The diagram below shows who does what. Note that the image is uploaded straight from the browser to object storage without passing through the API, and that no arrow runs from the OCR worker to transaction creation: the only path to a final transaction goes through human correction and confirmation.
+
+<Mermaid
+  title="Diagram 1. The receipt photo flow from upload, OCR, review, and confirmation through transaction commit and retention."
+  chart={`sequenceDiagram
+  actor U as User
+  participant FE as Frontend
+  participant API as API
+  participant OS as Private object storage
+  participant W as OCR worker
+  participant DB as PostgreSQL
+
+  U->>FE: Choose a receipt photo
+  FE->>API: Request an upload session with checksum
+  API-->>FE: Signed URL and receipt_import_id
+  FE->>OS: Upload the image directly
+  FE->>API: Confirm the upload finished
+  API->>W: Queue the OCR job
+  W->>OS: Read the private object
+  W->>DB: Store the draft and per-field confidence
+  API-->>FE: Status ready_for_review
+  U->>FE: Correct the draft and match products
+  FE->>API: Confirm the draft
+  API->>DB: Create the transaction in one database transaction
+  API-->>FE: Transaction stored, re-confirmation is idempotent
+  Note over OS,DB: The retention job removes images, OCR text, and drafts on their own schedules`}
+/>
+
+## 1. Upload
+
+1. Select the business and a JPEG or PNG file.
+2. The browser computes the file's SHA-256 and requests an upload session.
+3. The backend returns a short-lived signed URL together with a `receipt_import_id`.
+4. The file is uploaded directly to private object storage, not through the API.
+5. The frontend tells the backend the upload finished, and the OCR job is queued.
+
+The backend verifies MIME type from magic bytes, not from the extension or a client header. File size, pixel count, checksum, and image decoding are checked as well. The pixel and size limits exist to block images crafted to be expensive to process. EXIF metadata is stripped during sanitization, so the capture location is not stored.
+
+## 2. OCR
+
+The worker runs preprocessing and then PaddleOCR with the PP-StructureV3 pipeline. Each extraction attempt is stored as a new row holding the engine version, preprocessing version, duration, and any failure code. Earlier attempts are not overwritten, so OCR quality stays traceable.
+
+Accuracy on Indonesian MSME thermal receipts has not gone through a representative pilot evaluation. That is why human review is not optional.
+
+## 3. Review and correction
+
+The draft shows merchant, date, line items, and total, each with per-field confidence. The receipt image sits beside the form so corrections do not depend on memory.
+
+What the user can and must do:
+
+- correct the merchant name, date, quantity, unit price, and total;
+- match each item to the product master;
+- handle items that were not recognised;
+- explicitly accept a mismatch when `sum(quantity * unit_price)` differs from the receipt total.
+
+Low-confidence fields are highlighted first. Every correction increments the draft version so two edits cannot silently overwrite each other.
+
+## 4. Confirmation
+
+Confirmation creates the transaction and its reference to `receipt_import_id` inside one database transaction. The confirm endpoint is idempotent: a repeated request returns the same transaction instead of creating a second one.
+
+Only confirmed transactions are counted in analytics.
+
+## Private artifacts and retention
+
+- Receipt objects are always private. The frontend never receives a permanent public URL.
+- Browser access happens only through short-lived signed URLs.
+- Object keys are random and tenant-scoped. Objects belonging to another business cannot be reached.
+- The OCR worker reads objects with minimal permissions and never executes file contents.
+- Raw images, raw OCR text, drafts, and final transactions each have their own retention. The retention job runs on a schedule and does not hide deletion failures.
+- Account deletion covers the objects, OCR artifacts, drafts, and related export references.
+
+## PDF export
+
+An owner can request a PDF of an analysis report or a transaction summary.
+
+1. The export request creates an asynchronous job and immediately returns the artifact identity.
+2. The artifact worker renders the PDF outside the API request.
+3. The artifact status is read until it is ready.
+4. The download uses a short-lived signed URL.
+
+A PDF from a partial run carries the same partial marker as the on-screen report, including the disclaimer and the limitations list. Export artifacts follow the retention policy and are not kept indefinitely.
+
+OCR engine reference: [PP-StructureV3](https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PP-StructureV3.html). Using that engine does not substitute for calibration on Indonesian MSME receipt datasets.

@@ -1,25 +1,38 @@
 ---
 title: Peran dan akses
-description: Hak akses owner dan cashier pada setiap usaha.
+description: Hak akses owner dan cashier, undangan kasir, serta cara sistem menegakkan batas antar usaha.
 ---
 
-Role melekat pada pasangan user dan usaha. Satu user dapat menjadi owner pada satu usaha dan cashier pada usaha lain.
+Role melekat pada pasangan user dan usaha. Satu user dapat menjadi owner pada satu usaha dan cashier pada usaha lain. Karena itu role tidak disimpan pada tabel user, melainkan pada membership.
 
 ## Owner
 
-Owner mengelola profil usaha, produk, membership, riwayat transaksi, analytics, laporan, dan export. Dashboard owner adalah ringkasan komposit seluruh usaha. Filter per usaha tersedia pada area yang membutuhkan konteks bisnis.
+Owner mengelola profil usaha, produk, membership, riwayat transaksi, analytics, laporan, dan export. Dashboard owner adalah ringkasan komposit seluruh usaha yang dimilikinya, sedangkan filter per usaha tersedia pada area yang memang membutuhkan konteks bisnis.
 
 ## Cashier
 
-Cashier bekerja dalam satu konteks toko yang ditugaskan. Fokusnya adalah membaca produk aktif dan mencatat transaksi. Cashier tidak mengelola produk, melihat HPP atau margin, membuka analytics owner, atau mengubah membership.
+Cashier bekerja dalam satu konteks toko yang ditugaskan. Fokusnya membaca produk aktif dan mencatat transaksi. Cashier tidak mengelola produk, tidak melihat HPP atau margin, tidak membuka analytics owner, dan tidak mengubah membership.
+
+Permintaan cashier ke resource owner-only dijawab `404`, bukan `403`, agar keberadaan resource tersebut tidak ikut terkonfirmasi.
 
 ## Undangan kasir
 
-Owner membuat kode delapan karakter yang sekali pakai dan berlaku tujuh hari. Backend hanya menyimpan hash kode. Owner dapat melihat status undangan atau mencabutnya tanpa menerima kembali kode mentah.
+1. Owner membuat kode delapan karakter. Kode mentah hanya ditampilkan sekali saat dibuat.
+2. Kode bersifat sekali pakai dan berlaku tujuh hari.
+3. Backend menyimpan hash kode, bukan kodenya.
+4. Kasir menukar kode, dan pembuatan membership terjadi dalam satu database transaction.
+5. Owner dapat memeriksa status undangan atau mencabutnya, tanpa pernah menerima kembali kode mentah.
 
-## Penerapan hak akses
+Owner juga dapat menghapus membership kasir yang sudah aktif.
 
-Menyembunyikan menu bukan otorisasi. API dan repository memvalidasi membership dan role pada setiap resource tenant-scoped. Resource dari usaha lain mengembalikan `404`, termasuk ketika UUID tersebut benar-benar ada, agar keberadaan tenant tidak bocor.
+## Bagaimana batas ditegakkan
 
-Access token dan refresh token dikirim menggunakan cookie `HttpOnly` dan `SameSite=Lax`. Refresh token disimpan sebagai hash dan dirotasi saat digunakan. Frontend tidak menyimpan token di `localStorage`.
+Menyembunyikan menu bukan otorisasi. Membership dan role divalidasi ulang pada service dan repository untuk setiap resource tenant-scoped, sehingga permintaan langsung ke API tetap tertolak walaupun antarmuka dilewati.
 
+Resource milik usaha lain mengembalikan `404`, termasuk ketika UUID tersebut benar-benar ada. Perilaku ini disengaja: `403` akan memberi tahu penyerang bahwa ID yang ditebak itu valid.
+
+## Sesi dan token
+
+Access token dan refresh token dikirim melalui cookie `HttpOnly` dengan `SameSite=Lax`. Access token berumur pendek. Refresh token disimpan server sebagai hash, dirotasi setiap kali refresh berhasil, dan versi lama tidak dapat dipakai lagi. Frontend tidak menyimpan token di `localStorage`.
+
+Aspek keamanan lain, termasuk batas data yang boleh keluar menuju provider LLM, dibahas pada [Keamanan dan privasi](/docs/arsitektur/keamanan-dan-privasi).

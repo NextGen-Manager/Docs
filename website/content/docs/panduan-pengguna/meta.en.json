@@ -1,4 +1,10 @@
 {
-  "title": "User Guides",
-  "pages": ["analisis-pasar", "transaksi-dan-struk", "peran-dan-akses"]
+  "title": "User Guide",
+  "pages": [
+    "alur-pengguna",
+    "analisis-pasar",
+    "produk-dan-transaksi",
+    "foto-struk-dan-ekspor",
+    "peran-dan-akses"
+  ]
 }

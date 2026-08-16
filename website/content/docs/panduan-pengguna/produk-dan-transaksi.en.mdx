@@ -1,0 +1,51 @@
+---
+title: Products and transactions
+description: Setting up the product master, recording manual and batch sales, and reading transaction analytics.
+---
+
+Transaction Management uses one product master and one final transaction shape. Manual entry, batch entry, and receipt photos all end at a transaction record validated by the backend.
+
+## Setting up products
+
+The owner creates a product with a name, selling price, and unit cost. Product names are unique within a business. Money is stored as integer rupiah and cannot be negative.
+
+Margin is not stored as a column. It is recomputed deterministically when the owner response is built, so it can never drift from the current price and unit cost.
+
+A cashier can read active products and their selling prices in order to record transactions. The cashier product response contains no unit cost and no margin.
+
+## Manual transactions
+
+1. Select the business and product.
+2. Enter quantity, time, and channel.
+3. Confirm the transaction.
+4. The backend computes `line_total_idr` and `gross_total_idr`.
+
+The frontend is not an authoritative money calculator; it only formats figures the backend already computed. The backend also verifies that every product belongs to the same business before saving.
+
+`client_reference` is optional and makes network retries idempotent. The combination of `business_id` and `client_reference` is unique when the reference is set, so a request that arrives twice still produces one transaction.
+
+## Batch transactions
+
+Batch entry is for sales recorded after the fact, such as a day of handwritten notes. Validation runs per row, and rejected rows are reported with their reason rather than dropped silently.
+
+## Sales analytics
+
+Analytics reaches `available` only after transactions span seven distinct local dates in the `Asia/Jakarta` timezone. Before that gate the status is `collecting`, every aggregate list is empty, and `observation_window` is empty. The system does not present a provisional pattern as fact.
+
+What is available once the gate is met:
+
+- gross sales per day;
+- quantity and revenue per product;
+- top and bottom products subject to minimum exposure;
+- hourly distribution;
+- rule-based insight.
+
+A product that has not reached the seven-day minimum exposure since creation still appears in the sales list but is never selected as the bottom product. The reason is stated in the limitations list.
+
+Every insight carries its observation window, the `Asia/Jakarta` timezone, and a `rule_version`. The system does not recommend removing a product on low volume alone; availability, margin, days recorded, and product age are all considered.
+
+## From transactions to decisions
+
+Analytics figures are computed by a deterministic engine from confirmed transactions. Unconfirmed OCR output is never counted, so an extraction error cannot corrupt the dashboard.
+
+To record sales from a receipt photo, see [Receipt photos and exports](./foto-struk-dan-ekspor).

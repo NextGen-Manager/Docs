@@ -1,0 +1,51 @@
+---
+title: Produk dan transaksi
+description: Menyiapkan master produk, mencatat penjualan manual maupun batch, dan membaca transaction analytics.
+---
+
+Transaction Management memakai satu master produk dan satu bentuk transaksi final. Input manual, batch, dan foto struk semuanya berakhir pada record transaksi yang divalidasi backend.
+
+## Menyiapkan produk
+
+Owner membuat produk dengan nama, harga jual, dan HPP. Kombinasi nama produk unik dalam satu usaha. Uang disimpan sebagai integer rupiah dan tidak boleh negatif.
+
+Margin tidak disimpan sebagai kolom. Nilainya dihitung ulang secara deterministik saat response owner dibentuk, sehingga tidak pernah menyimpang dari harga dan HPP yang berlaku.
+
+Cashier dapat membaca produk aktif beserta harga jualnya untuk mencatat transaksi. Response produk untuk cashier tidak memuat HPP maupun margin.
+
+## Transaksi manual
+
+1. Pilih usaha dan produk.
+2. Isi jumlah, waktu, dan channel.
+3. Konfirmasi transaksi.
+4. Backend menghitung `line_total_idr` dan `gross_total_idr`.
+
+Frontend tidak menjadi kalkulator uang otoritatif; ia hanya memformat angka yang sudah dihitung backend. Backend juga memverifikasi bahwa setiap produk memang milik usaha yang sama sebelum menyimpan.
+
+`client_reference` bersifat opsional dan membuat retry jaringan idempotent. Kombinasi `business_id` dan `client_reference` unik ketika reference tidak kosong, sehingga permintaan yang terkirim dua kali tetap menghasilkan satu transaksi.
+
+## Transaksi batch
+
+Batch dipakai ketika penjualan dicatat menyusul, misalnya dari catatan tulis tangan satu hari. Validasi berjalan per baris dan baris yang ditolak dilaporkan beserta alasannya, bukan dibuang diam-diam.
+
+## Analitik penjualan
+
+Analytics berstatus `available` hanya setelah transaksi mencakup tujuh tanggal lokal berbeda pada zona `Asia/Jakarta`. Sebelum gate itu terpenuhi statusnya `collecting`, seluruh list agregat kosong, dan `observation_window` bernilai kosong. Sistem tidak menampilkan pola sementara sebagai fakta.
+
+Yang tersedia setelah gate terpenuhi:
+
+- penjualan kotor per hari;
+- kuantitas dan pendapatan per produk;
+- produk terlaris dan terbawah dengan minimum exposure;
+- distribusi per jam;
+- insight rule-based.
+
+Produk yang belum mencapai exposure minimum tujuh hari sejak dibuat tetap muncul pada daftar penjualan, tetapi tidak dipilih sebagai produk terbawah. Alasannya disebutkan pada daftar keterbatasan.
+
+Setiap insight membawa observation window, timezone `Asia/Jakarta`, dan `rule_version`. Sistem tidak merekomendasikan penghapusan produk hanya karena volumenya rendah; ketersediaan, margin, jumlah hari tercatat, dan usia produk ikut dipertimbangkan.
+
+## Dari transaksi ke keputusan
+
+Angka analytics dihitung engine deterministik dari transaksi berstatus confirmed. Hasil OCR yang belum dikonfirmasi tidak pernah ikut dihitung, sehingga kesalahan ekstraksi tidak merusak dashboard.
+
+Untuk mencatat penjualan dari foto struk, lihat [Foto struk dan ekspor](./foto-struk-dan-ekspor).

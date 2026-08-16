@@ -1,24 +1,38 @@
 ---
 title: Roles and access
-description: Owner and cashier boundaries within each business.
+description: Owner and cashier permissions, cashier invitations, and how the system enforces boundaries between businesses.
 ---
 
-A role belongs to a user-business pair. One user can be an owner in one business and a cashier in another.
+A role belongs to a user and business pair. One user can be the owner of one business and a cashier in another. That is why the role is stored on the membership rather than on the user record.
 
 ## Owner
 
-An owner manages the business profile, products, memberships, transaction history, analytics, reports, and exports. The owner dashboard is a composite summary across owned businesses. Per-business filters are available where business context is required.
+The owner manages the business profile, products, memberships, transaction history, analytics, reports, and exports. The owner dashboard is a composite summary across all owned businesses, with per-business filters available wherever business context actually matters.
 
 ## Cashier
 
-A cashier works within one assigned store context. The role focuses on reading active products and recording transactions. A cashier cannot manage products, inspect cost or margin, open owner analytics, or change memberships.
+A cashier works within one assigned store context. The focus is reading active products and recording transactions. A cashier does not manage products, does not see unit cost or margin, does not open owner analytics, and does not change memberships.
+
+A cashier request to an owner-only resource is answered with `404` rather than `403`, so the existence of that resource is not confirmed either.
 
 ## Cashier invitations
 
-The owner creates an eight-character, single-use code that remains valid for seven days. Only a hash is stored. The owner can inspect invitation status or revoke it without receiving the raw code again.
+1. The owner issues an eight-character code. The raw code is shown once, at creation.
+2. The code is single-use and valid for seven days.
+3. The backend stores a hash of the code, not the code itself.
+4. The cashier redeems the code, and the membership is created inside one database transaction.
+5. The owner can check the invitation status or revoke it, without ever receiving the raw code again.
 
-## Access control
+The owner can also remove an active cashier membership.
 
-Hiding a menu is not authorisation. The API and repositories validate membership and role for every tenant-scoped resource. Another business's resource returns `404` even when the UUID exists, preventing tenant enumeration.
+## How boundaries are enforced
 
-Access and refresh tokens are delivered through `HttpOnly`, `SameSite=Lax` cookies. Refresh tokens are stored as hashes and rotated on use. The frontend does not store tokens in `localStorage`.
+Hiding a menu is not authorization. Membership and role are re-validated in the service and repository layers for every tenant-scoped resource, so a direct API call is still rejected even when the interface is bypassed.
+
+Resources belonging to another business return `404`, including when the UUID genuinely exists. This is deliberate: a `403` would tell an attacker that the guessed identifier is valid.
+
+## Sessions and tokens
+
+Access and refresh tokens are delivered through `HttpOnly` cookies with `SameSite=Lax`. Access tokens are short-lived. Refresh tokens are stored server-side as hashes, rotated on every successful refresh, and the previous value cannot be reused. The frontend does not keep tokens in `localStorage`.
+
+Other security aspects, including the limits on what data may leave toward the LLM provider, are covered in [Security and privacy](/en/docs/arsitektur/keamanan-dan-privasi).

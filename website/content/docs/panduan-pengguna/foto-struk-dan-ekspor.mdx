@@ -1,0 +1,101 @@
+---
+title: Foto struk dan ekspor
+description: Alur unggah struk, hasil OCR, review dan koreksi, konfirmasi transaksi, artifact privat, retention, serta ekspor PDF.
+---
+
+Foto struk adalah jalur input yang paling rawan salah, karena itu jalurnya paling ketat. Hasil OCR selalu menjadi draft. Tidak ada transaksi final yang dibuat tanpa konfirmasi manusia.
+
+## Tahapan import struk
+
+```text
+created -> uploading -> queued -> preprocessing -> extracting
+  -> ready_for_review -> confirmed -> committed
+  | failed | cancelled
+```
+
+Setiap langkah endpoint receipt import membawa `business_id`, termasuk saat membuat sesi, menyelesaikan upload, membaca status, mengoreksi draft, dan konfirmasi.
+
+Diagram berikut menunjukkan siapa yang melakukan apa. Perhatikan bahwa gambar diunggah langsung dari browser ke object storage tanpa melewati API, dan bahwa tidak ada panah dari worker OCR menuju pembuatan transaksi: satu-satunya jalur ke transaksi final melewati koreksi dan konfirmasi manusia.
+
+<Mermaid
+  title="Diagram 1. Alur foto struk dari unggah, OCR, review, konfirmasi, sampai commit transaksi dan retention."
+  chart={`sequenceDiagram
+  actor U as Pengguna
+  participant FE as Frontend
+  participant API as API
+  participant OS as Object storage privat
+  participant W as Worker OCR
+  participant DB as PostgreSQL
+
+  U->>FE: Pilih foto struk
+  FE->>API: Minta sesi upload dengan checksum
+  API-->>FE: Signed URL dan receipt_import_id
+  FE->>OS: Unggah gambar langsung
+  FE->>API: Konfirmasi upload selesai
+  API->>W: Antrekan job OCR
+  W->>OS: Baca object privat
+  W->>DB: Simpan draft dan confidence per field
+  API-->>FE: Status ready_for_review
+  U->>FE: Koreksi draft dan cocokkan ke produk
+  FE->>API: Konfirmasi draft
+  API->>DB: Buat transaksi dalam satu database transaction
+  API-->>FE: Transaksi tersimpan, konfirmasi ulang idempotent
+  Note over OS,DB: Retention job menghapus gambar, teks OCR, dan draft sesuai masa simpan masing-masing`}
+/>
+
+## 1. Unggah
+
+1. Pilih usaha dan file JPEG atau PNG.
+2. Browser menghitung SHA-256 file, lalu meminta sesi upload.
+3. Backend mengembalikan signed URL berumur pendek beserta `receipt_import_id`.
+4. File diunggah langsung ke private object storage, bukan melalui API.
+5. Frontend memberi tahu backend bahwa upload selesai, lalu job OCR diantrekan.
+
+Backend memverifikasi MIME berdasarkan magic bytes, bukan ekstensi atau header dari client. Ukuran file, jumlah pixel, checksum, dan hasil decoding gambar juga diperiksa. Batas pixel dan ukuran ada untuk mencegah gambar yang sengaja dibuat agar mahal diproses. Metadata EXIF dibuang saat sanitization sehingga lokasi pengambilan foto tidak ikut tersimpan.
+
+## 2. OCR
+
+Worker menjalankan preprocessing lalu PaddleOCR dengan pipeline PP-StructureV3. Setiap percobaan ekstraksi disimpan sebagai row baru berisi versi engine, versi preprocessing, durasi, dan kode kesalahan bila ada. Percobaan lama tidak ditimpa, sehingga kualitas OCR dapat ditelusuri.
+
+Akurasi pada struk thermal UMKM Indonesia belum melalui evaluasi pilot representatif. Itulah sebabnya review manusia bukan opsi.
+
+## 3. Review dan koreksi
+
+Draft menampilkan merchant, tanggal, daftar item, dan total, masing-masing dengan confidence per field. Gambar struk tampil berdampingan dengan form agar koreksi tidak perlu mengandalkan ingatan.
+
+Yang dapat dan harus dilakukan pengguna:
+
+- memperbaiki nama merchant, tanggal, jumlah, harga satuan, dan total;
+- mencocokkan setiap item ke master produk;
+- menangani item yang tidak dikenali;
+- menerima mismatch secara eksplisit ketika `sum(quantity * unit_price)` berbeda dari total struk.
+
+Field dengan confidence rendah disorot lebih dulu. Setiap koreksi menaikkan version draft untuk mencegah dua perubahan saling menimpa.
+
+## 4. Konfirmasi
+
+Konfirmasi membuat transaksi dan referensi ke `receipt_import_id` dalam satu database transaction. Endpoint konfirmasi bersifat idempotent: permintaan yang diulang mengembalikan transaksi yang sama, bukan membuat transaksi kedua.
+
+Hanya transaksi berstatus confirmed yang dihitung pada analytics.
+
+## Artifact privat dan retention
+
+- Object struk selalu privat. Frontend tidak pernah menerima URL publik permanen.
+- Akses browser hanya melalui signed URL berumur pendek.
+- Object key bersifat acak dan tenant-scoped. Object milik usaha lain tidak dapat diakses.
+- Worker OCR membaca object dengan izin seminimal mungkin dan tidak mengeksekusi isi file.
+- Gambar mentah, teks OCR mentah, draft, dan transaksi final punya retention masing-masing. Retention job berjalan terjadwal dan tidak menyamarkan kegagalan penghapusan.
+- Penghapusan akun mencakup object, artifact OCR, draft, dan referensi export terkait.
+
+## Ekspor PDF
+
+Owner dapat meminta PDF laporan analisis atau ringkasan transaksi.
+
+1. Permintaan export membuat job asynchronous dan langsung mengembalikan identitas artifact.
+2. Worker artifact merender PDF di luar request API.
+3. Status artifact dibaca sampai siap.
+4. Unduhan memakai signed URL berumur pendek.
+
+PDF hasil run parsial memuat penanda parsial yang sama dengan laporan di layar, termasuk disclaimer dan daftar keterbatasan. Artifact export mengikuti retention policy dan tidak disimpan selamanya.
+
+Referensi engine OCR: [PP-StructureV3](https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PP-StructureV3.html). Memakai engine tersebut tidak menggantikan kalibrasi pada dataset struk UMKM Indonesia.

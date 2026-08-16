@@ -1,4 +1,10 @@
 {
   "title": "Panduan Pengguna",
-  "pages": ["analisis-pasar", "transaksi-dan-struk", "peran-dan-akses"]
+  "pages": [
+    "alur-pengguna",
+    "analisis-pasar",
+    "produk-dan-transaksi",
+    "foto-struk-dan-ekspor",
+    "peran-dan-akses"
+  ]
 }

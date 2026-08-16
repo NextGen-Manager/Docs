@@ -1,6 +1,6 @@
 ---
 title: Menjalankan Market Analysis
-description: Panduan mulai dari edukasi dan pengisian rencana usaha hingga membaca laporan analisis.
+description: Panduan dari pengisian rencana usaha, proses simulasi, hingga membaca laporan dan menangani hasil parsial.
 ---
 
 Market Analysis ditujukan untuk rencana usaha F&B di Jabodetabek. Analisis tidak terikat pada satu usaha aktif, sehingga pengguna dapat menguji konsep sebelum membuat usaha operasional.
@@ -13,37 +13,82 @@ Siapkan informasi berikut:
 - titik lokasi, area, dan radius analisis;
 - harga jual rata-rata dan HPP per unit;
 - modal awal dan biaya tetap bulanan;
-- hari operasi, kapasitas, serta rentang volume harian;
+- hari operasi, kapasitas, serta rentang volume harian `min`, `base`, dan `max`;
 - channel penjualan dan value proposition.
 
-Semua nilai uang dikirim sebagai integer rupiah. Jika input finansial kritis hilang, sistem tidak boleh menampilkan BEP presisi seolah datanya lengkap.
+Volume diisi sebagai rentang, bukan satu angka, karena Finance Council membutuhkan batas bawah dan batas atas untuk menyusun skenario. Semua nilai uang dikirim sebagai integer rupiah. Jika input finansial kritis hilang, sistem tidak menampilkan BEP sebagai angka presisi; yang muncul adalah daftar data yang kurang.
 
 ## Alur pengguna
 
 1. Buka **Analisis** dan isi rencana usaha.
-2. Sistem memeriksa prerequisite edukasi yang relevan.
-3. Selesaikan modul yang masih diwajibkan.
+2. Sistem memeriksa prerequisite edukasi yang relevan dengan jenis usaha yang baru diisi.
+3. Selesaikan modul yang masih diwajibkan bila gate belum terpenuhi.
 4. Kirim analisis. API membuat run berstatus `queued` dan segera mengembalikan kontrol.
 5. Halaman progress menerima event SSE. Jika koneksi SSE gagal, frontend melakukan polling snapshot setiap tiga detik.
 6. Buka laporan setelah run mencapai keadaan terminal.
 
-State utama adalah `queued`, `collecting_evidence`, `building_context`, `simulating`, `calculating_finance`, `scoring`, `composing_report`, dan `validating_report`. Setiap transisi disimpan ke PostgreSQL sebelum dipublikasikan melalui Redis.
+Pengiriman memakai `Idempotency-Key`, sehingga klik ganda atau reconnect tidak membuat dua run.
+
+## Tahapan yang berjalan
+
+| Stage | Yang sedang dikerjakan |
+|---|---|
+| `queued` | Run tercatat dan menunggu worker |
+| `collecting_evidence` | Mengumpulkan bukti lokal beserta provenance |
+| `building_context` | Menyusun concept card yang dilihat seluruh persona |
+| `simulating` | Empat council berjalan sesuai protokol round |
+| `calculating_finance` | Engine deterministik menghitung tiga skenario |
+| `scoring` | Rule versioned menilai empat dimension |
+| `composing_report` | Draft, kritik, dan revisi narasi |
+| `validating_report` | Memeriksa klaim, kutipan, dan konsistensi angka |
+
+Keadaan terminal adalah `completed`, `partial`, `failed`, atau `cancelled`. Setiap transisi disimpan ke PostgreSQL sebelum dipublikasikan, dan persentase progres berasal dari bobot stage yang benar-benar direncanakan run tersebut, bukan dari timer.
 
 ## Membaca laporan
 
-Score perlu dibaca bersama informasi berikut:
+Laporan disusun dalam urutan tetap:
 
-- Launch Readiness Score dan `rule_version`;
-- status setiap dimension;
-- Evidence Confidence dan missing evidence;
-- asumsi finance, BEP, revenue, profit, dan payback;
-- risiko, limitation, dan rekomendasi;
-- status synthetic simulation;
-- disclaimer.
+```text
+01 Launch Readiness Score        skor, interpretasi, dan rule_version
+02 Evidence Confidence           skor, label, dan daftar evidence yang hilang
+03 Ringkasan eksekutif           narasi dan parameter yang dipahami sistem
+04 Analisis pasar dan kompetitor saturasi, posisi harga, dan catatan
+05 Proyeksi finansial            tiga skenario, BEP, dan asumsi included/excluded
+06 Peta risiko                   risiko dan mitigasi yang bertaut ke artifact
+07 Rekomendasi prioritas         daftar tindakan berikutnya
+08 Bukti dan keterbatasan        tabel evidence, limitation, dan disclaimer
+```
 
-Interpretasi score aktif adalah sangat layak mulai 80, layak dengan mitigasi mulai 65, perlu evaluasi ulang mulai 50, dan tidak disarankan di bawah 50. Rentang dan threshold rule tetap berstatus `unvalidated` sampai expert review serta calibration selesai.
+Bagian 02 dan 08 tidak pernah disembunyikan atau ditutup secara bawaan. Keduanya yang membuat skor dapat dinilai kualitasnya.
+
+Skor dan confidence ditampilkan berdampingan dan tidak saling mengubah. Skor tinggi dengan confidence rendah berarti asumsi pengguna terlihat baik sementara buktinya tipis, bukan berarti rencananya aman.
+
+## Interpretasi skor
+
+| Rentang | Interpretasi |
+|---|---:|
+| 80 ke atas | Sangat layak |
+| 65 sampai 79 | Layak dengan mitigasi |
+| 50 sampai 64 | Perlu evaluasi ulang |
+| Di bawah 50 | Tidak disarankan |
+
+Rentang di atas berasal dari rule `lrs-v0.2-unvalidated`. Bobot dan threshold-nya ditetapkan product owner dan belum melalui expert review maupun calibration. Angka skor berguna untuk membandingkan skenario yang Anda buat sendiri, bukan sebagai ukuran mutlak kelayakan usaha.
+
+Formula dan bobot lengkap ada pada [Sumber data, keuangan, dan penilaian](/docs/arsitektur/evidence-finance-dan-scoring).
 
 ## Jika hasil berstatus `partial`
 
-Laporan parsial masih dapat memuat finance atau evidence yang valid. Bagian yang gagal tetap terlihat sebagai `unavailable`. Jangan menyimpulkan score yang tidak tersedia dan jangan menganggap synthetic persona sebagai survei pasar.
+Laporan parsial masih dapat memuat finance atau evidence yang valid. Yang perlu diperhatikan:
 
+- bagian yang gagal tetap terlihat dengan penanda `unavailable` beserta alasan aman;
+- dimension yang tidak dapat dinilai ditandai demikian, bukan diberi nilai bawaan;
+- total skor ditahan ketika dimension wajib tidak dapat dinilai, sehingga bobotnya tidak dialihkan diam-diam;
+- confidence turun sesuai rule dan perubahannya dijelaskan.
+
+Penyebab paling umum saat ini adalah provider evidence pasar yang belum tersedia dan runtime simulasi yang tidak aktif pada deployment tersebut.
+
+## Yang tidak boleh disimpulkan
+
+- Jangan memperlakukan hasil synthetic persona sebagai survei pasar. Purchase share sintetis bukan conversion rate.
+- Jangan menyimpulkan skor yang tidak tersedia.
+- Jangan membaca proyeksi finansial tanpa membaca daftar asumsi yang disertakan, termasuk hal yang sengaja tidak dihitung seperti pajak, gaji pemilik, dan fee platform.

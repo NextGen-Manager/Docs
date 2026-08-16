@@ -1,49 +1,94 @@
 ---
 title: Running a Market Analysis
-description: From education and plan inputs to responsible report interpretation.
+description: From filling in the business plan through the simulation stages to reading the report and handling partial results.
 ---
 
-Market Analysis evaluates an F&B plan in Greater Jakarta. An analysis is not tied to one active business, so users can test a concept before creating an operating business.
+Market Analysis targets F&B business plans in Greater Jakarta. An analysis is not bound to an active business, so a concept can be tested before an operating business exists.
 
 ## Before you start
 
-Prepare:
+Prepare the following:
 
-- the business type and concept name;
-- a location point, area, and analysis radius;
-- average selling price and cost of goods per unit;
-- initial capital and monthly fixed costs;
-- operating days, capacity, and a daily-volume range;
-- sales channels and the value proposition.
+- business type and concept name;
+- location point, area, and analysis radius;
+- average selling price and unit variable cost;
+- initial investment and monthly fixed cost;
+- operating days, capacity, and a daily volume range of `min`, `base`, and `max`;
+- sales channels and value proposition.
 
-All monetary values are integer rupiah. If a critical financial input is missing, the system must not present a precise break-even figure as though the data were complete.
+Volume is a range rather than a single number because the Finance Council needs a lower and upper bound to build scenarios. All money values are sent as integer rupiah. If a critical financial input is missing, the system does not present break-even as a precise figure; it shows the list of missing data instead.
 
 ## User flow
 
-1. Open **Analysis** and enter the business plan.
-2. The system checks the relevant education prerequisites.
-3. Complete any required module.
-4. Submit the analysis. The API creates a `queued` run and returns immediately.
-5. The progress page consumes SSE events. If SSE fails, the frontend polls the authoritative snapshot every three seconds.
-6. Open the report after the run reaches a terminal state.
+1. Open **Analysis** and fill in the business plan.
+2. The system checks the education prerequisites for the business type you just entered.
+3. Complete any module still required if the gate is not satisfied.
+4. Submit the analysis. The API creates a `queued` run and returns control immediately.
+5. The progress view receives SSE events. If the SSE connection fails, the frontend polls the status snapshot every three seconds.
+6. Open the report once the run reaches a terminal state.
 
-The main states are `queued`, `collecting_evidence`, `building_context`, `simulating`, `calculating_finance`, `scoring`, `composing_report`, and `validating_report`. Every transition is stored in PostgreSQL before Redis publication.
+Submission uses an `Idempotency-Key`, so a double click or a reconnect does not create two runs.
+
+## Stages
+
+| Stage | What is happening |
+|---|---|
+| `queued` | The run is recorded and waiting for a worker |
+| `collecting_evidence` | Gathering local evidence with provenance |
+| `building_context` | Assembling the concept card every persona will see |
+| `simulating` | The four councils run through the round protocol |
+| `calculating_finance` | The deterministic engine computes three scenarios |
+| `scoring` | Versioned rules score four dimensions |
+| `composing_report` | Draft, critique, and revision of the narrative |
+| `validating_report` | Checking claims, citations, and arithmetic consistency |
+
+Terminal states are `completed`, `partial`, `failed`, or `cancelled`. Every transition is persisted to PostgreSQL before it is published, and the progress percentage comes from the weighted stages the run actually planned to execute, never from a timer.
 
 ## Reading the report
 
-Read the score together with:
+The report follows a fixed order:
 
-- the Launch Readiness Score and `rule_version`;
-- each dimension status;
-- Evidence Confidence and missing evidence;
-- financial assumptions, break-even, revenue, profit, and payback;
-- risks, limitations, and recommendations;
-- synthetic-simulation status;
-- the disclaimer.
+```text
+01 Launch Readiness Score        score, interpretation, and rule_version
+02 Evidence Confidence           score, label, and the list of missing evidence
+03 Executive summary             narrative and the parameters the system understood
+04 Market and competitor         saturation, price positioning, and notes
+05 Financial projection          three scenarios, break-even, included/excluded assumptions
+06 Risk map                      risks and mitigations linked to artifacts
+07 Priority recommendations      the next actions to take
+08 Evidence and limitations      evidence table, limitations, and disclaimer
+```
 
-The active interpretation is highly feasible from 80, feasible with mitigation from 65, needs reassessment from 50, and not recommended below 50. The ranges and rule thresholds remain `unvalidated` pending expert review and calibration.
+Sections 02 and 08 are never hidden or collapsed by default. They are what makes the score assessable.
 
-## If the result is `partial`
+Score and confidence sit side by side and never adjust each other. A high score with low confidence means the user's assumptions look good while the evidence behind them is thin, not that the plan is safe.
 
-A partial report can still contain valid finance or evidence sections. A failed section remains visible as `unavailable`. Do not infer a missing score and do not treat synthetic personas as a market survey.
+## Interpreting the score
 
+| Range | Interpretation |
+|---|---:|
+| 80 and above | Highly viable |
+| 65 to 79 | Viable with mitigation |
+| 50 to 64 | Needs reassessment |
+| Below 50 | Not recommended |
+
+These ranges come from the `lrs-v0.2-unvalidated` rule set. Its weights and thresholds were set by the product owner and have not gone through expert review or calibration. The score is useful for comparing scenarios you build yourself, not as an absolute measure of business viability.
+
+The full formula and weights are in [Data sources, finance, and scoring](/en/docs/arsitektur/evidence-finance-dan-scoring).
+
+## When the result is `partial`
+
+A partial report can still carry valid finance or evidence. What to watch for:
+
+- the failed section stays visible, marked `unavailable`, with a safe reason;
+- an unscorable dimension is marked as such rather than given a default value;
+- the total score is withheld when a required dimension cannot be scored, so its weight is not silently redistributed;
+- confidence drops according to the rule, and the change is explained.
+
+The most common causes today are the market evidence provider being unavailable and the simulation runtime not being active in that deployment.
+
+## What not to conclude
+
+- Do not treat synthetic persona output as a market survey. A synthetic purchase share is not a conversion rate.
+- Do not infer a score that was not produced.
+- Do not read the financial projection without its assumption list, including what is deliberately excluded such as tax, owner salary, and platform fees.

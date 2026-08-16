@@ -1,0 +1,72 @@
+---
+title: Alur pengguna
+description: Urutan langkah untuk calon pengusaha dan pemilik usaha yang sudah berjalan, beserta pembagian kerja owner dan cashier.
+---
+
+Aplikasi tidak berbentuk satu wizard linear. Ada dua jalur masuk yang berbeda, dan keduanya bertemu ketika usaha mulai mencatat transaksi.
+
+## Jalur calon pengusaha
+
+Tujuannya menilai rencana sebelum modal dikeluarkan. Analisis tidak terikat pada satu usaha aktif, jadi konsep dapat diuji sebelum usaha dibuat.
+
+1. **Daftar dan masuk.** Akun dibuat dengan email dan kata sandi. Sesi memakai cookie `HttpOnly`.
+2. **Selesaikan edukasi yang diwajibkan.** Sistem memeriksa modul yang relevan dengan jenis usaha. Selama modul wajib belum selesai, pembuatan analisis ditolak dengan kode `EDUCATION_PREREQUISITE_NOT_MET`.
+3. **Isi rencana usaha.** Konsep, lokasi dan radius, harga jual, HPP, modal awal, biaya tetap, hari operasi, kapasitas, rentang volume harian, kanal, dan value proposition.
+4. **Kirim analisis.** API menerima permintaan, membuat run berstatus `queued`, lalu mengembalikan kontrol tanpa menunggu simulasi selesai.
+5. **Ikuti progres.** Halaman progres menampilkan stage nyata dari backend. Bila koneksi SSE gagal, frontend beralih ke polling status.
+6. **Baca laporan.** Skor, evidence confidence, proyeksi finansial, risiko, rekomendasi, dan keterbatasan dibaca sebagai satu kesatuan.
+7. **Unduh PDF bila perlu.** Export berjalan asynchronous dan diunduh melalui signed URL berumur pendek.
+
+Detailnya ada pada [Menjalankan Market Analysis](./analisis-pasar).
+
+## Jalur pemilik usaha berjalan
+
+Tujuannya mencatat apa yang benar-benar terjadi, lalu memahami polanya.
+
+1. **Buat usaha.** Profil usaha menjadi tenant untuk produk, transaksi, dan laporan.
+2. **Siapkan produk.** Nama, harga jual, dan HPP. Harga jual dipakai kasir, HPP tidak.
+3. **Undang kasir bila dibutuhkan.** Owner membuat kode delapan karakter yang sekali pakai dan berlaku tujuh hari.
+4. **Catat transaksi.** Manual satu per satu, batch, atau melalui foto struk yang ditinjau lebih dulu.
+5. **Tunggu gate data.** Analytics terbuka setelah transaksi mencakup tujuh tanggal lokal berbeda di zona `Asia/Jakarta`. Sebelum itu status tetap `collecting` dan tidak ada agregat sementara yang ditampilkan.
+6. **Baca analytics dan insight.** Penjualan harian, performa produk, dan insight rule-based dengan observation window yang disebut eksplisit.
+7. **Ekspor ringkasan transaksi** bila diperlukan untuk keperluan di luar aplikasi.
+
+Detailnya ada pada [Produk dan transaksi](./produk-dan-transaksi) serta [Foto struk dan ekspor](./foto-struk-dan-ekspor).
+
+## Pertemuan kedua jalur
+
+Transaksi yang sudah dikonfirmasi adalah data internal yang kualitasnya jauh lebih tinggi daripada perkiraan pengguna. Data itu memperkuat asumsi volume dan biaya pada analisis berikutnya, misalnya ketika owner mempertimbangkan cabang kedua atau perubahan harga.
+
+```text
+edukasi -> rencana usaha -> analisis -> laporan
+                                          |
+                                          v
+                              usaha -> produk -> transaksi
+                                                    |
+                                                    v
+                                        analytics -> analisis berikutnya
+```
+
+## Pembagian kerja owner dan cashier
+
+| Kegiatan | Owner | Cashier |
+|---|---|---|
+| Mengelola profil usaha dan produk | Ya | Tidak |
+| Melihat HPP dan margin | Ya | Tidak |
+| Mencatat transaksi | Ya | Ya |
+| Mengunggah dan meninjau foto struk | Ya | Tidak |
+| Membuka transaction analytics | Ya | Tidak |
+| Menjalankan Market Analysis | Ya | Tidak |
+| Mengundang atau mencabut kasir | Ya | Tidak |
+
+Role melekat pada pasangan user dan usaha, bukan pada user secara global. Satu orang dapat menjadi owner pada usahanya sendiri dan cashier pada usaha orang lain. Aturan lengkapnya ada pada [Peran dan akses](./peran-dan-akses).
+
+## Keadaan yang wajib ditangani setiap layar
+
+| Keadaan | Yang terlihat pengguna |
+|---|---|
+| Loading | Kerangka tampilan yang menyerupai bentuk akhir |
+| Kosong | Penjelasan apa yang akan muncul dan satu aksi utama |
+| Error | Pesan aman, `correlation_id` yang dapat disalin, dan retry bila kesalahan memang dapat diulang |
+| Belum berwenang | Diarahkan ke login tanpa membuang isian yang sedang dikerjakan |
+| Partial | Bagian yang gagal tetap tampil dengan penanda tidak tersedia |

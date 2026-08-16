@@ -1,0 +1,72 @@
+---
+title: User journeys
+description: Step order for prospective owners and operating owners, plus the division of work between owner and cashier.
+---
+
+The application is not a single linear wizard. There are two entry paths, and they meet once the business starts recording transactions.
+
+## Prospective owner journey
+
+The goal is to evaluate a plan before capital is committed. An analysis is not tied to an active business, so a concept can be tested before any business is created.
+
+1. **Register and sign in.** An account is created with an email and password. The session uses `HttpOnly` cookies.
+2. **Complete the required education.** The system checks the modules relevant to the business type. While a required module is incomplete, creating an analysis is rejected with `EDUCATION_PREREQUISITE_NOT_MET`.
+3. **Fill in the business plan.** Concept, location and radius, selling price, unit variable cost, initial investment, fixed cost, operating days, capacity, daily volume range, channels, and value proposition.
+4. **Submit the analysis.** The API accepts the request, creates a `queued` run, and returns control without waiting for the simulation.
+5. **Follow the progress.** The progress view shows real backend stages. If the SSE connection fails, the frontend falls back to status polling.
+6. **Read the report.** Score, evidence confidence, financial projection, risks, recommendations, and limitations are meant to be read together.
+7. **Download the PDF if needed.** Exports run asynchronously and are downloaded through a short-lived signed URL.
+
+Details are in [Running a Market Analysis](./analisis-pasar).
+
+## Operating owner journey
+
+The goal is to record what actually happened and then understand the pattern.
+
+1. **Create the business.** The business profile is the tenant for products, transactions, and reports.
+2. **Set up products.** Name, selling price, and unit cost. Cashiers use the selling price; they never see the unit cost.
+3. **Invite a cashier if needed.** The owner issues an eight-character code that is single-use and valid for seven days.
+4. **Record transactions.** One at a time, in a batch, or from a receipt photo that is reviewed first.
+5. **Wait for the data gate.** Analytics unlocks once transactions span seven distinct local dates in `Asia/Jakarta`. Until then the status stays `collecting` and no interim aggregates are shown.
+6. **Read analytics and insight.** Daily sales, product performance, and rule-based insight, each stating its observation window.
+7. **Export a transaction summary** when it is needed outside the application.
+
+Details are in [Products and transactions](./produk-dan-transaksi) and [Receipt photos and exports](./foto-struk-dan-ekspor).
+
+## Where the two paths meet
+
+Confirmed transactions are internal data of far higher quality than a user estimate. That data strengthens volume and cost assumptions in the next analysis, for instance when an owner considers a second location or a price change.
+
+```text
+education -> business plan -> analysis -> report
+                                            |
+                                            v
+                             business -> products -> transactions
+                                                          |
+                                                          v
+                                             analytics -> next analysis
+```
+
+## Owner and cashier responsibilities
+
+| Activity | Owner | Cashier |
+|---|---|---|
+| Manage the business profile and products | Yes | No |
+| See unit cost and margin | Yes | No |
+| Record transactions | Yes | Yes |
+| Upload and review receipt photos | Yes | No |
+| Open transaction analytics | Yes | No |
+| Run a Market Analysis | Yes | No |
+| Invite or revoke a cashier | Yes | No |
+
+A role belongs to a user and business pair, not to a user globally. One person can be the owner of their own business and a cashier in someone else's. The full rules are in [Roles and access](./peran-dan-akses).
+
+## States every screen must handle
+
+| State | What the user sees |
+|---|---|
+| Loading | A skeleton shaped like the final layout |
+| Empty | What will appear here, plus one primary action |
+| Error | A safe message, a copyable `correlation_id`, and a retry when the failure is genuinely retryable |
+| Unauthorized | Redirected to sign in without losing work in progress |
+| Partial | The failed section stays visible, marked unavailable |
