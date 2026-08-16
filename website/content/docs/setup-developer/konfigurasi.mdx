@@ -1,0 +1,126 @@
+---
+title: Konfigurasi environment
+description: Variabel environment backend, frontend, dan website dokumentasi beserta fungsinya dan aturan penanganan kredensial.
+---
+
+Konfigurasi backend dibaca dari file `.env` dan divalidasi saat startup. Contoh lengkapnya ada pada `.env.example` di repository backend. Halaman ini menjelaskan fungsi tiap kelompok variabel, bukan menyalin nilainya.
+
+Tidak ada nilai kredensial nyata pada dokumentasi ini. Kredensial disuntikkan runtime melalui secret manager platform dan tidak pernah masuk repository, image, log, atau bundle frontend.
+
+## Backend
+
+### Runtime dan koneksi
+
+| Variabel | Fungsi |
+|---|---|
+| `ENVIRONMENT` | Nama environment aktif |
+| `DEBUG` | Menyalakan detail diagnostik pada development |
+| `DATABASE_URL` | Koneksi PostgreSQL melalui driver async |
+| `REDIS_URL` | Redis untuk API dan default Celery |
+
+### Autentikasi
+
+| Variabel | Fungsi |
+|---|---|
+| `JWT_SECRET` | Signing secret token. Wajib unik untuk setiap environment non-lokal |
+| `JWT_ISSUER` dan `JWT_AUDIENCE` | Klaim yang diverifikasi saat token dibaca |
+| `ACCESS_TOKEN_MINUTES` | Umur access token |
+| `REFRESH_TOKEN_DAYS` | Umur refresh token |
+| `AUTH_COOKIE_SECURE` | Menyalakan atribut `Secure` pada cookie. Wajib aktif di produksi |
+| `CORS_ORIGINS` | Daftar origin frontend yang diizinkan, dipisah koma |
+
+Signing secret juga menjadi garam untuk pseudonymization identifier menuju provider LLM. Karena itu dua environment tidak pernah menghasilkan referensi yang sama untuk run yang sama.
+
+### Celery dan recovery
+
+| Variabel | Fungsi |
+|---|---|
+| `CELERY_BROKER_URL` dan `CELERY_RESULT_BACKEND` | Broker dan backend hasil; kosong berarti mengikuti `REDIS_URL` |
+| `CELERY_ANALYSIS_QUEUE` dan `CELERY_ARTIFACT_QUEUE` | Nama queue analysis dan artifact |
+| `CELERY_ANALYSIS_SOFT_TIME_LIMIT_SECONDS` | Batas lunak eksekusi task analysis |
+| `CELERY_ANALYSIS_TIME_LIMIT_SECONDS` | Batas keras eksekusi task analysis |
+| `CELERY_TASK_ALWAYS_EAGER` | Menjalankan task inline. Hanya untuk development dan test |
+| `ANALYSIS_LEASE_SECONDS` | Masa lease recovery. Harus lebih besar daripada batas keras task |
+| `ANALYSIS_QUEUE_GRACE_SECONDS` | Toleransi sebelum run antre dianggap hilang |
+| `ANALYSIS_MAX_ATTEMPTS` | Batas percobaan ulang sebuah run |
+| `ANALYSIS_RECOVERY_INTERVAL_SECONDS` | Jeda antar-siklus rekonsiliasi |
+| `ANALYSIS_RECOVERY_BATCH_SIZE` | Jumlah run yang direkonsiliasi per siklus |
+
+Urutan lease dan timeout itu penting. Lease yang lebih pendek daripada batas keras task akan membuat run yang masih hidup diambil worker kedua.
+
+### OASIS dan provider
+
+| Variabel | Fungsi |
+|---|---|
+| `OASIS_ENABLED` | Menyalakan jalur simulasi agent |
+| `OASIS_PROVIDER` | `gemini` atau `openai`, dipilih per deployment |
+| `OASIS_MODEL_ID` | Model yang cocok dengan provider. Model berlabel `-preview` ditolak saat startup |
+| `GEMINI_API_KEY` | Kredensial Gemini bila provider Gemini dipilih |
+| `OPENAI_API_KEY` | Kredensial OpenAI bila provider OpenAI dipilih |
+| `OASIS_PROMPT_VERSION` | Versi prompt yang dicatat pada manifest run |
+| `OASIS_COHORT_VERSION` dan `OASIS_COHORT_SIZE` | Template dan ukuran cohort persona |
+| `OASIS_SEED` | Seed yang dicatat pada manifest |
+| `OASIS_ROUND_LIMIT` | Jumlah round maksimum |
+| `OASIS_TOKEN_BUDGET` | Anggaran token per run |
+| `OASIS_MAX_OUTPUT_TOKENS_PER_STAGE` | Batas output per stage |
+| `OASIS_CONCURRENCY_LIMIT` | Panggilan provider yang boleh berjalan bersamaan |
+| `OASIS_WALL_CLOCK_SECONDS` | Batas waktu run |
+| `OASIS_RETRY_LIMIT` | Batas percobaan ulang panggilan agent |
+| `OASIS_TRACE_ROOT` | Root direktori trace; satu direktori per run |
+| `OASIS_TRACE_RETENTION_DAYS` | Umur trace sebelum dihapus retention job |
+
+Provider tidak disimpulkan dari key yang kebetulan tersedia dan tidak dipilih dari request pengguna. Tidak ada fallback otomatis antar-provider. Ketika kredensial kosong, analysis tetap berjalan dan selesai `partial` dengan bagian simulasi dinyatakan tidak tersedia.
+
+### Server-sent events
+
+| Variabel | Fungsi |
+|---|---|
+| `SSE_HEARTBEAT_SECONDS` | Jeda heartbeat agar koneksi tidak dianggap mati |
+| `SSE_POLL_INTERVAL_SECONDS` | Jeda server membaca event baru |
+| `SSE_MAX_DURATION_SECONDS` | Umur maksimum satu koneksi stream |
+
+### Object storage
+
+| Variabel | Fungsi |
+|---|---|
+| `OBJECT_STORAGE_PROVIDER` | Jenis penyedia storage |
+| `OBJECT_STORAGE_ENDPOINT_URL` | Endpoint yang dipakai server |
+| `OBJECT_STORAGE_PUBLIC_ENDPOINT_URL` | Endpoint yang dipakai browser untuk signed URL |
+| `OBJECT_STORAGE_REGION` dan `OBJECT_STORAGE_BUCKET` | Region dan bucket privat |
+| `OBJECT_STORAGE_ACCESS_KEY` dan `OBJECT_STORAGE_SECRET_KEY` | Kredensial storage |
+| `OBJECT_STORAGE_SIGNED_URL_SECONDS` | Umur signed URL |
+
+Endpoint server dan endpoint publik dipisah karena container memanggil storage melalui nama service internal, sedangkan browser memerlukan host yang dapat dijangkau dari luar.
+
+### Struk, OCR, dan retention
+
+| Variabel | Fungsi |
+|---|---|
+| `RECEIPT_MAX_SIZE_BYTES` | Batas ukuran file struk |
+| `RECEIPT_MAX_PIXELS` | Batas jumlah pixel; mencegah gambar yang mahal diproses |
+| `RECEIPT_IMAGE_RETENTION_DAYS` | Umur gambar struk sebelum dihapus |
+| `RECEIPT_OCR_PROVIDER` | Adapter OCR yang dipakai |
+| `RECEIPT_OCR_ENGINE_VERSION` | Versi engine yang dicatat pada tiap percobaan ekstraksi |
+| `RECEIPT_PREPROCESSING_VERSION` | Versi pipeline preprocessing gambar |
+| `EXPORT_RETENTION_DAYS` | Umur artifact export |
+| `RETENTION_INTERVAL_SECONDS` | Jeda antar-siklus retention job |
+
+## Frontend
+
+| Variabel | Fungsi |
+|---|---|
+| `BACKEND_URL` | Origin backend yang dipakai route proxy server-side |
+
+Variabel ini bersifat server-only. Jangan menaruh URL backend, kredensial, atau konfigurasi sensitif pada variabel berawalan `NEXT_PUBLIC_`, karena nilainya ikut ke bundle browser.
+
+## Website dokumentasi
+
+Website dokumentasi tidak membutuhkan secret runtime, backend, database, atau kredensial provider. Snapshot OpenAPI dibundel saat build.
+
+## Aturan kredensial
+
+- Simpan signing key, kredensial provider, dan kredensial object storage pada secret manager platform.
+- Buat nilai unik untuk setiap environment non-lokal.
+- Jangan commit `.env` dalam bentuk apa pun.
+- Jangan menaruh secret pada log, pesan error, image, atau dokumentasi.
+- Rotasi kredensial ketika ada dugaan kebocoran, lalu jalankan kembali regression test.

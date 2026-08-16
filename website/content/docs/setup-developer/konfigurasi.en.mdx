@@ -1,0 +1,126 @@
+---
+title: Environment configuration
+description: Backend, frontend, and documentation site environment variables, what each group does, and the rules for handling credentials.
+---
+
+Backend configuration is read from a `.env` file and validated at startup. The full example lives in `.env.example` in the backend repository. This page explains what each group of variables does rather than copying values.
+
+No real credential values appear in this documentation. Credentials are injected at runtime through the platform secret manager and never enter the repository, an image, a log, or the frontend bundle.
+
+## Backend
+
+### Runtime and connections
+
+| Variable | Purpose |
+|---|---|
+| `ENVIRONMENT` | Name of the active environment |
+| `DEBUG` | Enables diagnostic detail in development |
+| `DATABASE_URL` | PostgreSQL connection through the async driver |
+| `REDIS_URL` | Redis for the API and as the Celery default |
+
+### Authentication
+
+| Variable | Purpose |
+|---|---|
+| `JWT_SECRET` | Token signing secret. Must be unique for every non-local environment |
+| `JWT_ISSUER` and `JWT_AUDIENCE` | Claims verified when a token is read |
+| `ACCESS_TOKEN_MINUTES` | Access token lifetime |
+| `REFRESH_TOKEN_DAYS` | Refresh token lifetime |
+| `AUTH_COOKIE_SECURE` | Enables the cookie `Secure` attribute. Required in production |
+| `CORS_ORIGINS` | Comma-separated allowlist of frontend origins |
+
+The signing secret also salts identifier pseudonymization toward the LLM provider. That is why two environments never produce the same reference for the same run.
+
+### Celery and recovery
+
+| Variable | Purpose |
+|---|---|
+| `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` | Broker and result backend; empty means follow `REDIS_URL` |
+| `CELERY_ANALYSIS_QUEUE` and `CELERY_ARTIFACT_QUEUE` | Analysis and artifact queue names |
+| `CELERY_ANALYSIS_SOFT_TIME_LIMIT_SECONDS` | Soft execution limit for the analysis task |
+| `CELERY_ANALYSIS_TIME_LIMIT_SECONDS` | Hard execution limit for the analysis task |
+| `CELERY_TASK_ALWAYS_EAGER` | Runs tasks inline. Development and test only |
+| `ANALYSIS_LEASE_SECONDS` | Recovery lease duration. Must exceed the hard task limit |
+| `ANALYSIS_QUEUE_GRACE_SECONDS` | Grace period before a queued run is considered lost |
+| `ANALYSIS_MAX_ATTEMPTS` | Maximum attempts for one run |
+| `ANALYSIS_RECOVERY_INTERVAL_SECONDS` | Interval between reconciliation cycles |
+| `ANALYSIS_RECOVERY_BATCH_SIZE` | Runs reconciled per cycle |
+
+The ordering of lease and timeout matters. A lease shorter than the hard task limit would let a second worker reclaim a run that is still alive.
+
+### OASIS and provider
+
+| Variable | Purpose |
+|---|---|
+| `OASIS_ENABLED` | Enables the agent simulation path |
+| `OASIS_PROVIDER` | `gemini` or `openai`, chosen per deployment |
+| `OASIS_MODEL_ID` | A model matching the provider. Models tagged `-preview` are rejected at startup |
+| `GEMINI_API_KEY` | Gemini credential when Gemini is selected |
+| `OPENAI_API_KEY` | OpenAI credential when OpenAI is selected |
+| `OASIS_PROMPT_VERSION` | Prompt version recorded on the run manifest |
+| `OASIS_COHORT_VERSION` and `OASIS_COHORT_SIZE` | Persona cohort template and size |
+| `OASIS_SEED` | Seed recorded on the manifest |
+| `OASIS_ROUND_LIMIT` | Maximum number of rounds |
+| `OASIS_TOKEN_BUDGET` | Token budget per run |
+| `OASIS_MAX_OUTPUT_TOKENS_PER_STAGE` | Output cap per stage |
+| `OASIS_CONCURRENCY_LIMIT` | Provider calls allowed to run at once |
+| `OASIS_WALL_CLOCK_SECONDS` | Wall-clock limit for a run |
+| `OASIS_RETRY_LIMIT` | Retry limit for agent calls |
+| `OASIS_TRACE_ROOT` | Trace directory root; one directory per run |
+| `OASIS_TRACE_RETENTION_DAYS` | Trace age before the retention job removes it |
+
+The provider is never inferred from whichever key happens to be present and never chosen from a user request. There is no automatic cross-provider fallback. When credentials are empty, an analysis still runs and finishes `partial` with the simulation section reported unavailable.
+
+### Server-sent events
+
+| Variable | Purpose |
+|---|---|
+| `SSE_HEARTBEAT_SECONDS` | Heartbeat interval so the connection is not treated as dead |
+| `SSE_POLL_INTERVAL_SECONDS` | How often the server reads new events |
+| `SSE_MAX_DURATION_SECONDS` | Maximum lifetime of one stream connection |
+
+### Object storage
+
+| Variable | Purpose |
+|---|---|
+| `OBJECT_STORAGE_PROVIDER` | Storage provider type |
+| `OBJECT_STORAGE_ENDPOINT_URL` | Endpoint used by the server |
+| `OBJECT_STORAGE_PUBLIC_ENDPOINT_URL` | Endpoint used by the browser for signed URLs |
+| `OBJECT_STORAGE_REGION` and `OBJECT_STORAGE_BUCKET` | Region and private bucket |
+| `OBJECT_STORAGE_ACCESS_KEY` and `OBJECT_STORAGE_SECRET_KEY` | Storage credentials |
+| `OBJECT_STORAGE_SIGNED_URL_SECONDS` | Signed URL lifetime |
+
+The server endpoint and the public endpoint are separate because containers reach storage through an internal service name while the browser needs an externally reachable host.
+
+### Receipts, OCR, and retention
+
+| Variable | Purpose |
+|---|---|
+| `RECEIPT_MAX_SIZE_BYTES` | Receipt file size limit |
+| `RECEIPT_MAX_PIXELS` | Pixel count limit; blocks images that are expensive to process |
+| `RECEIPT_IMAGE_RETENTION_DAYS` | Receipt image age before deletion |
+| `RECEIPT_OCR_PROVIDER` | The OCR adapter in use |
+| `RECEIPT_OCR_ENGINE_VERSION` | Engine version recorded on every extraction attempt |
+| `RECEIPT_PREPROCESSING_VERSION` | Image preprocessing pipeline version |
+| `EXPORT_RETENTION_DAYS` | Export artifact age |
+| `RETENTION_INTERVAL_SECONDS` | Interval between retention job cycles |
+
+## Frontend
+
+| Variable | Purpose |
+|---|---|
+| `BACKEND_URL` | Backend origin used by the server-side proxy route |
+
+This variable is server-only. Never put the backend URL, credentials, or sensitive configuration behind a `NEXT_PUBLIC_` prefix, because those values reach the browser bundle.
+
+## Documentation site
+
+The documentation site needs no runtime secret, backend, database, or provider credential. The OpenAPI snapshot is bundled at build time.
+
+## Credential rules
+
+- Keep signing keys, provider credentials, and object storage credentials in the platform secret manager.
+- Generate unique values for every non-local environment.
+- Never commit `.env` in any form.
+- Never place a secret in a log, an error message, an image, or documentation.
+- Rotate credentials on any suspected leak, then re-run the regression tests.
