@@ -1,0 +1,93 @@
+---
+title: Security and privacy
+description: Data classification, tenant isolation, the prompt data boundary, redaction, upload security, logging, and retention.
+---
+
+This page describes boundaries the code enforces, not good intentions written into a policy. Every point below has a clear place where it is enforced.
+
+## Data classification
+
+| Class | Example | Treatment |
+|---|---|---|
+| Public | Published education content | Cacheable, still versioned |
+| Internal | Prompt templates, draft scoring rules | Team access, changes audited |
+| Confidential | Business profiles, costs, transactions, receipt photos | Tenant isolation and least privilege |
+| Secret | Password hashes, signing keys, provider credentials | Injected at runtime, never in the repository or logs |
+
+Transaction data is not model training data. Consent to process data in order to produce insight is not consent to train a model.
+
+## Tenant isolation
+
+The tenant is derived from membership in every repository query, not from a client-supplied parameter and not from a filter in the interface.
+
+- Every tenant-scoped resource is re-validated in the service and repository layers.
+- Resources belonging to another business return `404`, including when the UUID genuinely exists, so tenant existence does not leak.
+- Object storage uses random, tenant-scoped object keys.
+- Cross-user authorization tests run for every resource, not only the obviously sensitive ones.
+
+Hiding a menu is not authorization. A bypassed interface still meets the same checks.
+
+## Authentication and sessions
+
+- Passwords are hashed with a modern algorithm using reviewed parameters.
+- Access tokens are short-lived; refresh tokens are rotated and revocable.
+- Refresh tokens are stored server-side as hashes. The previous token cannot be reused after rotation.
+- Tokens travel in `HttpOnly` cookies with an appropriate `SameSite`, and `Secure` is enabled outside development.
+- CORS uses an explicit origin allowlist.
+- Rate limits apply to login and to the creation of expensive jobs.
+
+## The prompt data boundary
+
+This is the most consequential boundary for a product that uses an LLM. What leaves toward the provider is a structured payload built in one place as an allowlist.
+
+**Never sent to the LLM provider:**
+
+- customer names;
+- phone numbers and email addresses;
+- raw receipt text and receipt images;
+- free-form notes on transactions;
+- per-line transaction detail;
+- real identifiers such as `user_id`, `business_id`, and `analysis_id`.
+
+**What is sent** is the concept card, an evidence digest, financial assumption bounds, the cohort manifest, and the run budget. The schema itself has no field capable of holding personal data.
+
+### Redaction and pseudonymization
+
+- Identifiers are replaced with salted digests, so the provider never sees a real ID and a leaked digest cannot be mapped back to a user.
+- The salt differs per environment, so two deployments never produce the same reference for the same run.
+- User free text is normalised, then emails, URLs, and Indonesian phone number patterns are redacted even though the field should never have contained one.
+- Control characters plus bidirectional and zero-width marks are stripped, because such marks can hide an injected instruction from a human reviewer.
+- Text length is capped before anything is sent.
+
+### Prompt injection
+
+Business names, product descriptions, value propositions, and evidence text are treated as delimited data, never merged into the system prompt. Instructions hidden inside them are not executed as commands. Agent output must still pass artifact validation before use, so even a successful injection attempt cannot push a number into the report.
+
+## Upload security
+
+- Uploads use short-lived signed URLs into a private bucket.
+- MIME type is verified from magic bytes, not from the extension or a client header.
+- Format, file size, pixel count, and processing time are bounded to prevent decompression bombs and resource abuse.
+- The client-supplied checksum is matched against the object actually stored.
+- EXIF and location metadata are stripped during sanitization.
+- The OCR worker reads objects with minimal permissions and never executes file contents.
+- The frontend never receives a permanent public URL.
+
+## Logging and audit
+
+Logs carry a `correlation_id`, hashed identity, stage, event, and a safe error code. The correlation ID flows from the API through the worker, the trace, and the report, so one problem can be followed across components.
+
+What must never reach the logs: passwords, JWTs, provider keys, cookies, complete signed URLs, prompts containing business data, raw receipt text, and full transaction payloads.
+
+Minimum audit events cover login and token revocation, business profile and transaction changes, analysis creation and cancellation, exports, publication of rule or content versions, and account deletion. An audit record stores actor, action, resource ID, time, outcome, and correlation ID, not sensitive payloads.
+
+## Retention and deletion
+
+- Receipt images, raw OCR text, drafts, OASIS traces, and export PDFs each have their own retention.
+- The retention job runs on a schedule and does not hide deletion failures.
+- Account deletion covers the objects, OCR artifacts, drafts, and related export references.
+- Soft delete is not a substitute for privacy deletion.
+
+## Content safety
+
+Personas represent needs and behaviour, not sensitive attributes. The system does not produce recommendations that discriminate by religion, ethnicity, or disability. Persona quotes are always labelled synthetic responses and never use a real person's name. Legal and licensing content is curated from official sources and carries a review date rather than being generated from a free prompt. Financial recommendations state their assumptions and are not investment or credit advice.

@@ -1,0 +1,93 @@
+---
+title: Keamanan dan privasi
+description: Klasifikasi data, isolasi tenant, batas data menuju prompt, redaction, keamanan upload, logging, dan retention.
+---
+
+Halaman ini menjelaskan batas yang ditegakkan kode, bukan niat baik yang ditulis di kebijakan. Setiap poin di bawah punya tempat penegakan yang jelas.
+
+## Klasifikasi data
+
+| Kelas | Contoh | Perlakuan |
+|---|---|---|
+| Public | Konten edukasi terpublikasi | Boleh dicache, tetap versioned |
+| Internal | Prompt template, draft rule scoring | Akses tim, perubahan diaudit |
+| Confidential | Profil usaha, biaya, transaksi, foto struk | Tenant isolation dan least privilege |
+| Secret | Password hash, signing key, kredensial provider | Disuntikkan runtime, tidak pernah masuk repository atau log |
+
+Data transaksi bukan data latihan model. Persetujuan memproses data untuk menghasilkan insight bukan persetujuan untuk melatih model.
+
+## Isolasi tenant
+
+Tenant diturunkan dari membership pada setiap query repository, bukan dari parameter yang dikirim client dan bukan dari filter di antarmuka.
+
+- Setiap resource tenant-scoped divalidasi ulang pada service dan repository.
+- Resource milik usaha lain dijawab `404`, termasuk ketika UUID-nya benar-benar ada, agar keberadaan tenant tidak bocor.
+- Object storage memakai object key acak yang tenant-scoped.
+- Test otorisasi lintas user dijalankan untuk setiap resource, bukan hanya untuk yang tampak sensitif.
+
+Menyembunyikan menu bukan otorisasi. Antarmuka yang dilewati tetap menghadapi pemeriksaan yang sama.
+
+## Autentikasi dan sesi
+
+- Password di-hash dengan algoritma modern berparameter yang ditinjau.
+- Access token berumur pendek; refresh token dirotasi dan dapat dicabut.
+- Refresh token disimpan server sebagai hash. Token lama tidak dapat dipakai ulang setelah rotasi.
+- Token dikirim melalui cookie `HttpOnly` dengan `SameSite` yang tepat, dan `Secure` aktif di luar development.
+- CORS memakai allowlist origin yang eksplisit.
+- Rate limit diterapkan pada login dan pembuatan job mahal.
+
+## Batas data menuju prompt
+
+Ini batas yang paling menentukan bagi produk yang memakai LLM. Yang keluar menuju provider hanyalah payload terstruktur yang dibangun di satu tempat sebagai allowlist.
+
+**Tidak pernah dikirim ke provider LLM:**
+
+- nama pelanggan;
+- nomor telepon dan email;
+- teks struk mentah dan gambar struk;
+- catatan bebas pada transaksi;
+- detail transaksi per baris;
+- identifier asli seperti `user_id`, `business_id`, dan `analysis_id`.
+
+**Yang dikirim** adalah concept card, ringkasan evidence, batas asumsi finansial, manifest cohort, dan budget run. Bentuknya adalah schema yang memang tidak memiliki field untuk menampung data pribadi.
+
+### Redaction dan pseudonymization
+
+- Identifier diganti digest bergaram, sehingga provider tidak pernah melihat ID asli dan digest yang bocor tidak dapat dipetakan kembali ke pengguna.
+- Garam berbeda antar-environment, sehingga dua deployment tidak menghasilkan referensi yang sama untuk run yang sama.
+- Teks bebas pengguna dinormalisasi, lalu email, URL, dan pola nomor telepon Indonesia direduksi walaupun field tersebut memang tidak seharusnya memuatnya.
+- Karakter kontrol serta tanda bidirectional dan zero-width dibuang, karena tanda semacam itu dapat menyembunyikan instruksi dari mata peninjau manusia.
+- Panjang teks dibatasi sebelum dikirim.
+
+### Prompt injection
+
+Nama usaha, deskripsi produk, value proposition, dan teks evidence diperlakukan sebagai data ter-delimit, bukan bagian dari system prompt. Instruksi yang tersembunyi di dalamnya tidak dieksekusi sebagai perintah. Output agent tetap harus lolos validator artifact sebelum dipakai, sehingga upaya injeksi yang berhasil pun tidak dapat menyuntikkan angka ke laporan.
+
+## Keamanan upload
+
+- Upload memakai signed URL berumur pendek menuju bucket privat.
+- MIME diverifikasi dari magic bytes, bukan dari ekstensi atau header client.
+- Format, ukuran file, jumlah pixel, dan waktu proses dibatasi untuk mencegah decompression bomb dan penyalahgunaan sumber daya.
+- Checksum yang dikirim client dicocokkan dengan object yang benar-benar tersimpan.
+- EXIF dan metadata lokasi dibuang saat sanitization.
+- Worker OCR membaca object dengan izin seminimal mungkin dan tidak mengeksekusi isi file.
+- Frontend tidak pernah menerima URL publik permanen.
+
+## Logging dan audit
+
+Log memuat `correlation_id`, hash identitas, stage, event, dan kode kesalahan yang aman. Correlation ID mengalir dari API ke worker, trace, dan laporan sehingga satu masalah dapat ditelusuri lintas komponen.
+
+Yang tidak boleh masuk log: password, JWT, kunci provider, cookie, signed URL lengkap, prompt yang memuat data bisnis, teks struk mentah, dan payload transaksi penuh.
+
+Audit event minimum mencakup login dan pencabutan token, perubahan profil usaha dan transaksi, pembuatan serta pembatalan analysis, export, publikasi versi rule atau konten, dan penghapusan akun. Audit menyimpan aktor, aksi, ID resource, waktu, hasil, dan correlation ID, bukan payload sensitif.
+
+## Retention dan penghapusan
+
+- Gambar struk, teks OCR mentah, draft, trace OASIS, dan PDF export punya retention masing-masing.
+- Retention job berjalan terjadwal dan tidak menyamarkan kegagalan penghapusan.
+- Penghapusan akun mencakup object, artifact OCR, draft, dan referensi export terkait.
+- Soft delete tidak menggantikan penghapusan privasi.
+
+## Content safety
+
+Persona mewakili kebutuhan dan perilaku, bukan atribut sensitif. Sistem tidak menghasilkan rekomendasi yang membedakan berdasarkan agama, etnis, atau disabilitas. Kutipan persona selalu berlabel respons sintetis dan tidak memakai nama orang nyata. Konten legal dan perizinan dikurasi dari sumber resmi dan membawa waktu peninjauan, bukan dihasilkan dari prompt bebas. Rekomendasi finansial menyebut asumsinya dan bukan nasihat investasi atau kredit.

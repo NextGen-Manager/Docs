@@ -1,4 +1,10 @@
 {
   "title": "Architecture",
-  "pages": ["sistem", "oasis-dan-deterministik", "evidence-finance-dan-scoring"]
+  "pages": [
+    "sistem",
+    "oasis-dan-deterministik",
+    "evidence-finance-dan-scoring",
+    "keamanan-dan-privasi",
+    "desain-target"
+  ]
 }
