@@ -1,0 +1,251 @@
+---
+title: Target design
+description: 'Features already specified in the technical documents: purpose, components, data flow, system boundaries, target contracts, and decisions still open.'
+---
+
+<Callout type="info" title="Target design">
+This section describes the target design. Actual implementation status is on the [Status and limitations](/en/docs/pengantar/status-dan-batasan) page.
+</Callout>
+
+This page exists so the next implementation follows the design already agreed rather than redesigning from scratch. Its content is derived from the technical documents and adds no new endpoint, schema, formula, or behaviour.
+
+## How to read this page
+
+| Section | Meaning |
+|---|---|
+| Components and boundaries | How the work is split across frontend, backend, worker, agent, and storage |
+| Target contract | Endpoint shapes already specified in the technical documents, not active endpoints |
+| Open decisions | Points the source documents do not settle, which must not be decided unilaterally during implementation |
+
+**A target contract is not the API reference.** The [endpoint reference](/en/docs/api/referensi) contains only endpoints present in the OpenAPI snapshot. The paths on this page cannot be called yet.
+
+The product rules apply in full to every design below: authoritative numbers come only from deterministic engines, every number carries provenance, partial failure stays visible, money is integer rupiah, and user data never enters a prompt.
+
+## Business plan extraction from a document
+
+Lowers the cost of the first input: the user uploads a proposal they already have instead of filling a dozen fields one by one. Upload is an accelerator, not a requirement. The manual entry path stays fully available and this design must not remove it.
+
+| Component | Responsibility |
+|---|---|
+| Frontend | Accepts files, shows real sub-stages, and provides a per-field review screen |
+| Backend | Validates files, creates the draft, stores the input snapshot with its correction trail |
+| Worker | Reads the document, splits content, extracts entities, maps them to the schema |
+| Agent | Not involved. Extraction uses structured output outside the social interaction loop |
+| Storage | The document as a private object with its own retention |
+
+<Mermaid
+  title="Diagram 1. Document extraction flow: machine output is always a draft confirmed by a human before it becomes the analysis payload."
+  chart={`flowchart LR
+  DOC["Document: PDF, DOCX, MD, TXT, or image"] --> VAL["Validate format, size, and magic bytes"]
+  VAL --> EXT["Structured extraction on the worker"]
+  EXT --> DRAFT(["BusinessProfileDraft with confidence and source_span"])
+  DRAFT --> REV["Per-field review screen"]
+  MAN["Manual entry"] --> REV
+  REV --> CONF["Validated profile"]
+  CONF --> AN["Create analysis payload"]
+  EXT -->|"extraction failed"| REV`}
+/>
+
+Accepted formats are PDF, DOCX, MD, TXT, and JPG or PNG photos of a business plan, limited to 10 MB per file and a maximum of five files per draft. MIME type is verified from magic bytes rather than the extension, and images are also bounded by pixel count.
+
+The stages shown to the user are real stages, not an animation:
+
+```text
+reading_document -> splitting_content -> extracting_entities
+  -> mapping_to_schema -> assessing_completeness -> ready_for_review
+```
+
+### Data model and the deterministic boundary
+
+Every draft field carries one of three statuses: `detected`, `needs_confirmation`, or `missing`. That status is what the review screen renders as a badge.
+
+The binding rules:
+
+- Extraction **never** produces authoritative financial numbers. It may only copy numbers written in the document, with a `source_span` such as a page or offset as evidence.
+- A `missing` field belonging to the minimum financial input blocks break-even from being shown as a precise figure. The analysis may still run, but the related dimension gets low confidence and the report shows the list of missing data.
+- A user correction promotes the field to confirmed and records an `edited_by_user` marker on the input snapshot, so extraction quality can be measured later.
+- Document text is treated as delimited untrusted data, matching the prompt injection threat in [Security and privacy](/en/docs/arsitektur/keamanan-dan-privasi).
+
+Uploaded documents are stored as private objects with their own retention and are deleted along with the account.
+
+### Failure behaviour
+
+An extraction failure does not send the user back to zero. The review screen still opens, empty, with an honest message that extraction failed, and manual entry remains available. The conditions that must be handled include corrupt files, scanned PDFs without a text layer, documents too short to extract from, unsupported formats, and an exhausted quota.
+
+### Target contract
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/business-profile/extractions` | Create an extraction job from an uploaded document |
+| `PUT` | `/v1/business-profile` | Save the profile the user confirmed |
+
+### Open decisions
+
+- The draft response payload, including the complete field list and the representation of `source_span`, is not specified.
+- The source documents state that extraction progress is delivered as events, but the path and event shape are not specified.
+- The extraction quota value and the retention period for uploaded documents are not specified.
+
+## Scenario comparison
+
+Tests one business variable while everything else is held identical, so a difference in outcome can be attributed to that variable rather than to model randomness.
+
+| Component | Responsibility |
+|---|---|
+| Frontend | Copies the original run's input, highlights the single changed field, shows delta with variability |
+| Backend | Compares two `completed` runs from stored artifacts |
+| Worker | Runs the variation like any other run |
+| Agent | Does not produce the comparison. Deltas come from existing artifacts and scores |
+
+<Mermaid
+  title="Diagram 2. Comparing two runs: a delta is only conclusive when it exceeds run-to-run variability."
+  chart={`flowchart TB
+  A["Original run completed"] --> CMP["Comparison"]
+  B["Variation run completed"] --> CMP
+  LOCK["Cohort, prompt, model, and seed locked"] --> B
+  CMP --> D(["Delta per dimension and finance"])
+  D --> Q{"Delta exceeds run-to-run variability?"}
+  Q -->|"yes"| SHOW["Show the difference with its variability"]
+  Q -->|"no"| NOPE["State that the difference is inconclusive"]
+  CONF["Low evidence confidence"] --> NOPE`}
+/>
+
+Creating a variation copies the entire input of the original run, then locks `cohort_version`, prompt version, model configuration, and seed before opening the setup screen with one field highlighted for change. That locking is what enforces the counterfactual rule: one variable changes, everything else stays identical.
+
+The binding rules:
+
+- The cohort manifest must be the same across both runs.
+- The evidence snapshot must be the same unless the location variable is precisely what is being tested.
+- Model, prompt, temperature, action space, round count, and seed are recorded on both runs.
+- Deltas are shown side by side with run-to-run variability.
+- When a delta is smaller than the variability or evidence confidence is low, the interface must state that the difference is inconclusive and must not declare a winner.
+
+### Target contract
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/analyses/compare` | Compare two `completed` runs |
+
+### Open decisions
+
+- The comparison request and response payloads are not specified.
+- How run-to-run variability is obtained at runtime is not specified. The source documents call for at least three repeated runs to measure variance but place that in evaluation work, not as product behaviour when a user presses compare.
+- Whether creating a variation needs its own endpoint or reuses ordinary analysis creation is not specified.
+
+## Follow-up discussion with an agent
+
+Follows up on a finished report without starting a new run, for instance asking how a promotion would affect margin.
+
+| Component | Responsibility |
+|---|---|
+| Frontend | Shows the specialist choice, the conversation, tool-call attribution, and follow-up actions |
+| Backend | Restricts which artifacts can be read, calls the calculator, validates the answer |
+| Worker | Runs the agent call outside the web request |
+| Agent | Explains and critiques this run's artifacts. Produces no numbers |
+
+The selectable specialists are a marketing expert, a finance expert, and a risk analyst. All three are personality instances of the related councils, not a general chatbot.
+
+<Mermaid
+  title="Diagram 3. The discussion boundary: every number in an answer must come from the deterministic calculator and carry tool-call attribution."
+  chart={`flowchart TB
+  Q["User question"] --> AG["Specialist agent"]
+  ART["Artifacts of this run only"] --> AG
+  AG --> NEED{"Does the answer contain a number?"}
+  NEED -->|"no"| VAL["Validator"]
+  NEED -->|"yes"| CALC["Deterministic financial calculator"]
+  CALC --> TC(["Result with tool_call_id"])
+  TC --> VAL
+  VAL -->|"number without attribution"| REJ["Rejected before rendering"]
+  VAL --> ANS["Answer with tool-call attribution"]
+  ANS --> VAR["Run as a variation action"]`}
+/>
+
+The binding rules:
+
+- The agent may read only this run's artifacts. There is no access to raw transactions, secrets, or another user's data.
+- The agent may not produce new numbers. When a question requires arithmetic, the agent calls the deterministic financial calculator and cites its result.
+- A number without a `tool_call_id` is rejected by the validator before rendering. The interface shows tool-call attribution rather than a badge claiming correctness.
+- An answer that changes an assumption offers a structured action to run that variation, not merely a textual suggestion.
+- Discussion history is stored per run and enters the audit events.
+
+### Target contract
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/analyses/{analysis_id}/discussions` | Send a follow-up question about one run |
+
+### Open decisions
+
+- The response shape, including how tool-call attribution reaches the client, is not specified.
+- Whether answers are streamed or delivered in one response is not specified.
+- Discussion history retention, rate limits, and the token budget per discussion are not specified.
+
+## Admin area and feedback
+
+Monitors AI output quality, cost, and usage, and collects user feedback on reports and features.
+
+| Component | Responsibility |
+|---|---|
+| Frontend | The user feedback form and a monitoring view separate from the main application |
+| Backend | Separate, audited admin endpoints returning metadata and aggregates |
+| Worker | The source of run metrics, not a consumer of admin endpoints |
+| Agent | Not involved |
+
+<Mermaid
+  title="Diagram 4. The admin area reads metadata and aggregates. Raw transactions, receipts, and full prompts are not exposed."
+  chart={`flowchart LR
+  ADM["Admin user"] --> API["Separate audited admin endpoints"]
+  API --> RUNS(["AI run status, latency, and cost"])
+  API --> FB(["User feedback"])
+  API --> USG(["Feature usage aggregates"])
+  API -.->|"not exposed"| RAW[("Raw transactions, receipts, and full prompts")]
+  ADM --> AUD["Admin access audit event"]`}
+/>
+
+What is monitored follows the metrics already specified in the operations document: queue age and run duration per stage; request, token, cost, timeout, and schema failure counts per agent type; tool-call and artifact validation failures; and the ratio of `completed`, `partial`, `failed`, and `cancelled` runs.
+
+The binding rules:
+
+- Admin endpoints are separate, audited, and cannot read raw transactions without a clear need and authorisation.
+- Admin access is its own audit event.
+- Monitoring holds metadata, not full prompts or complete transaction payloads.
+
+### Target contract
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/feedback` | User feedback on a report or feature |
+| `GET` | `/v1/admin/ai-runs` | Monitor AI run status, latency, cost, and output quality |
+| `GET` | `/v1/admin/feedback` | Monitor user feedback |
+| `GET` | `/v1/admin/usage` | Feature usage aggregates |
+
+### Open decisions
+
+- **There is no admin role in the data model.** Membership knows only `owner` and `cashier`. How an admin user is authenticated and authorised is unspecified and must not be decided during implementation without an architecture decision.
+- Whether the admin area is global or scoped per tenant is not specified.
+- The feedback payload schema and the retention period for monitoring data are not specified.
+
+## Cancelling an analysis run
+
+Gives the user a way to stop a running analysis without discarding work already finished.
+
+`cancelled` is one of the terminal states in the [analysis state machine](./sistem). This design supplies the path that triggers it.
+
+| Component | Responsibility |
+|---|---|
+| Frontend | A cancel action on the run progress screen |
+| Backend | Moves the state to `cancelled` and preserves artifacts already produced |
+| Worker | How in-flight work is stopped is not specified |
+| Agent | Not involved |
+
+Artifacts already produced are kept for audit purposes, so work already done does not disappear from the trail.
+
+### Target contract
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v1/analyses/{analysis_id}/cancel` | Stop a run that has not reached a terminal state |
+
+### Open decisions
+
+- How an already-consumed provider budget is treated on a cancelled run is not specified.
+- Whether a running stage is stopped immediately or allowed to finish before the state moves is not specified.

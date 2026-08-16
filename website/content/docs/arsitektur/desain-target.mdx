@@ -1,0 +1,251 @@
+---
+title: Desain target
+description: 'Rancangan fitur yang sudah ditetapkan pada dokumen teknis: tujuan, komponen, aliran data, batas sistem, target contract, dan keputusan yang masih terbuka.'
+---
+
+<Callout type="info" title="Desain target">
+Bagian ini menjelaskan desain target. Status implementasi aktual dapat dilihat pada halaman [Status dan batasan](/docs/pengantar/status-dan-batasan).
+</Callout>
+
+Halaman ini ada supaya implementasi berikutnya mengikuti desain yang sudah ditetapkan, bukan merancang ulang dari nol. Isinya diturunkan dari dokumen teknis dan tidak menambahkan endpoint, schema, formula, atau perilaku baru.
+
+## Cara membaca halaman ini
+
+| Bagian | Arti |
+|---|---|
+| Komponen dan batas | Pembagian kerja frontend, backend, worker, agent, dan penyimpanan |
+| Target contract | Bentuk endpoint yang sudah ditetapkan pada dokumen teknis, bukan endpoint aktif |
+| Keputusan terbuka | Hal yang belum ditetapkan dokumen sumber dan tidak boleh diputuskan sepihak saat implementasi |
+
+**Target contract bukan API reference.** [Referensi endpoint](/docs/api/referensi) hanya memuat endpoint yang benar-benar ada pada snapshot OpenAPI. Path pada halaman ini belum dapat dipanggil.
+
+Aturan produk berlaku penuh pada seluruh desain di bawah: angka otoritatif hanya lahir dari engine deterministik, setiap angka membawa provenance, kegagalan parsial tetap terlihat, uang adalah integer rupiah, dan data pengguna tidak masuk prompt.
+
+## Ekstraksi rencana usaha dari dokumen
+
+Menurunkan biaya input awal: pengguna mengunggah proposal yang sudah dimiliki alih-alih mengisi belasan field satu per satu. Unggahan adalah akselerator, bukan syarat. Jalur isian manual tetap tersedia penuh dan tidak boleh dihapus oleh desain ini.
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Frontend | Menerima file, menampilkan sub-tahap nyata, dan menyediakan layar review per field |
+| Backend | Validasi file, membuat draft, menyimpan snapshot input beserta jejak koreksi |
+| Worker | Membaca dokumen, memecah konten, mengekstrak entitas, memetakan ke schema |
+| Agent | Tidak terlibat. Ekstraksi memakai structured output di luar loop interaksi sosial |
+| Penyimpanan | Dokumen sebagai object privat dengan retention terpisah |
+
+<Mermaid
+  title="Diagram 1. Alur ekstraksi dokumen: hasil mesin selalu menjadi draft yang dikonfirmasi manusia sebelum menjadi payload analysis."
+  chart={`flowchart LR
+  DOC["Dokumen PDF, DOCX, MD, TXT, atau gambar"] --> VAL["Validasi format, ukuran, dan magic bytes"]
+  VAL --> EXT["Ekstraksi terstruktur pada worker"]
+  EXT --> DRAFT(["BusinessProfileDraft dengan confidence dan source_span"])
+  DRAFT --> REV["Layar review per field"]
+  MAN["Isian manual"] --> REV
+  REV --> CONF["Profil tervalidasi"]
+  CONF --> AN["Payload create analysis"]
+  EXT -->|"ekstraksi gagal"| REV`}
+/>
+
+Format yang diterima adalah PDF, DOCX, MD, TXT, dan JPG atau PNG hasil foto rencana usaha, dengan batas 10 MB per file dan maksimum lima file per draft. MIME diverifikasi dari magic bytes, bukan ekstensi, dan gambar juga dibatasi jumlah pixel-nya.
+
+Tahap yang ditampilkan ke pengguna adalah tahap nyata, bukan animasi:
+
+```text
+membaca_dokumen -> memecah_konten -> mengekstrak_entitas
+  -> memetakan_ke_skema -> menilai_kelengkapan -> siap_direview
+```
+
+### Data model dan batas dengan engine deterministik
+
+Setiap field draft membawa salah satu dari tiga status: `detected`, `needs_confirmation`, atau `missing`. Status inilah yang dirender sebagai penanda pada layar review.
+
+Batas yang mengikat:
+
+- Ekstraksi **tidak pernah** menghasilkan angka finansial otoritatif. Ia hanya boleh menyalin angka yang tertulis di dokumen, dengan `source_span` berupa halaman atau offset sebagai bukti.
+- Field `missing` yang termasuk input finansial minimum memblokir tampilan BEP sebagai angka presisi. Analysis tetap boleh berjalan, tetapi dimension terkait diberi confidence rendah dan laporan menampilkan daftar data yang kurang.
+- Koreksi pengguna menaikkan status field menjadi terkonfirmasi dan mencatat penanda `edited_by_user` pada snapshot input, sehingga kualitas ekstraksi dapat diukur belakangan.
+- Teks dokumen diperlakukan sebagai untrusted data yang di-delimit, sesuai ancaman prompt injection pada [Keamanan dan privasi](/docs/arsitektur/keamanan-dan-privasi).
+
+Dokumen unggahan disimpan sebagai object privat dengan retention tersendiri dan ikut terhapus ketika akun dihapus.
+
+### Perilaku kegagalan
+
+Kegagalan ekstraksi tidak mengembalikan pengguna ke nol. Layar review tetap dibuka dalam keadaan kosong dengan pesan jujur bahwa ekstraksi gagal, dan input manual tetap tersedia. Kondisi yang wajib ditangani mencakup file rusak, PDF hasil pindai tanpa lapisan teks, dokumen terlalu pendek untuk diekstrak, format tidak didukung, dan kuota habis.
+
+### Target contract
+
+| Method | Path | Fungsi |
+|---|---|---|
+| `POST` | `/v1/business-profile/extractions` | Membuat pekerjaan ekstraksi dari dokumen yang diunggah |
+| `PUT` | `/v1/business-profile` | Menyimpan profil hasil konfirmasi pengguna |
+
+### Keputusan terbuka
+
+- Bentuk payload response draft, termasuk daftar field lengkap dan representasi `source_span`, belum ditetapkan.
+- Dokumen sumber menyebut progres ekstraksi dikirim sebagai event, tetapi path dan bentuk event-nya belum ditetapkan.
+- Nilai kuota ekstraksi dan masa retention dokumen unggahan belum ditetapkan.
+
+## Perbandingan skenario
+
+Menguji satu variabel bisnis dengan kondisi lain dibuat sama, sehingga perbedaan hasil dapat dikaitkan pada variabel itu dan bukan pada keacakan model.
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Frontend | Menyalin input run asal, menyorot satu field yang diubah, menampilkan delta beserta variabilitas |
+| Backend | Membandingkan dua run yang sudah `completed` dari artifact yang tersimpan |
+| Worker | Menjalankan run variasi seperti run biasa |
+| Agent | Tidak menghasilkan perbandingan. Delta dihitung dari artifact dan skor yang sudah ada |
+
+<Mermaid
+  title="Diagram 2. Perbandingan dua run: delta hanya dapat disimpulkan ketika lebih besar daripada variabilitas antar-run."
+  chart={`flowchart TB
+  A["Run asal completed"] --> CMP["Perbandingan"]
+  B["Run variasi completed"] --> CMP
+  LOCK["Cohort, prompt, model, dan seed dikunci"] --> B
+  CMP --> D(["Delta per dimension dan finance"])
+  D --> Q{"Delta melebihi variabilitas antar-run?"}
+  Q -->|"ya"| SHOW["Tampilkan perbedaan beserta variabilitas"]
+  Q -->|"tidak"| NOPE["Nyatakan perbedaan tidak dapat disimpulkan"]
+  CONF["Evidence confidence rendah"] --> NOPE`}
+/>
+
+Aksi membuat variasi menyalin seluruh input run asal lalu mengunci `cohort_version`, versi prompt, konfigurasi model, dan seed, kemudian membuka layar setup dengan satu field disorot untuk diubah. Penguncian itulah yang menegakkan aturan counterfactual: satu variabel berubah, sisanya identik.
+
+Aturan yang mengikat:
+
+- Cohort manifest kedua run harus sama.
+- Evidence snapshot harus sama kecuali variabel lokasi memang yang sedang diuji.
+- Model, prompt, temperature, action space, jumlah round, dan seed dicatat pada kedua run.
+- Delta ditampilkan berdampingan dengan variabilitas antar-run.
+- Ketika delta lebih kecil daripada variabilitas atau evidence confidence rendah, antarmuka wajib menyatakan bahwa perbedaan tidak dapat disimpulkan dan tidak boleh menampilkan pemenang.
+
+### Target contract
+
+| Method | Path | Fungsi |
+|---|---|---|
+| `POST` | `/v1/analyses/compare` | Membandingkan dua run yang sudah `completed` |
+
+### Keputusan terbuka
+
+- Bentuk payload request dan response perbandingan belum ditetapkan.
+- Cara variabilitas antar-run diperoleh pada runtime belum ditetapkan. Dokumen sumber menyebut minimal tiga run berulang untuk mengukur variance, tetapi menempatkannya sebagai kegiatan evaluasi, bukan sebagai perilaku produk saat pengguna menekan tombol banding.
+- Apakah aksi membuat variasi memerlukan endpoint tersendiri atau cukup memakai pembuatan analysis biasa belum ditetapkan.
+
+## Diskusi lanjutan dengan agent
+
+Menindaklanjuti laporan yang sudah selesai tanpa menjalankan run baru, misalnya menanyakan pengaruh sebuah promo terhadap marjin.
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Frontend | Menampilkan pilihan spesialis, percakapan, atribusi tool call, dan aksi lanjutan |
+| Backend | Membatasi artifact yang dapat dibaca, memanggil kalkulator, memvalidasi jawaban |
+| Worker | Menjalankan pemanggilan agent di luar request web |
+| Agent | Menjelaskan dan mengkritik artifact run ini. Tidak menghasilkan angka |
+
+Spesialis yang dapat dipilih adalah Pakar Pemasaran, Ahli Finansial, dan Analis Risiko. Ketiganya adalah personality instance dari council terkait, bukan chatbot umum.
+
+<Mermaid
+  title="Diagram 3. Batas diskusi: setiap angka pada jawaban harus berasal dari kalkulator deterministik dan membawa atribusi tool call."
+  chart={`flowchart TB
+  Q["Pertanyaan pengguna"] --> AG["Agent spesialis"]
+  ART["Artifact run ini saja"] --> AG
+  AG --> NEED{"Jawaban memuat angka?"}
+  NEED -->|"tidak"| VAL["Validator"]
+  NEED -->|"ya"| CALC["Kalkulator finansial deterministik"]
+  CALC --> TC(["Hasil dengan tool_call_id"])
+  TC --> VAL
+  VAL -->|"angka tanpa atribusi"| REJ["Ditolak sebelum dirender"]
+  VAL --> ANS["Jawaban dengan atribusi tool call"]
+  ANS --> VAR["Aksi jalankan sebagai variasi"]`}
+/>
+
+Batas yang mengikat:
+
+- Agent hanya boleh membaca artifact run ini. Tidak ada akses ke transaksi mentah, secret, atau data pengguna lain.
+- Agent tidak boleh menghasilkan angka baru. Bila pertanyaan menuntut hitungan, agent memanggil kalkulator finansial deterministik dan mengutip hasilnya.
+- Angka tanpa `tool_call_id` ditolak validator sebelum dirender. Antarmuka menampilkan atribusi tool call, bukan penanda yang mengklaim kebenaran.
+- Jawaban yang mengubah asumsi menawarkan aksi terstruktur untuk menjalankan variasi dengan parameter tersebut, bukan sekadar teks saran.
+- Riwayat diskusi tersimpan per run dan masuk audit event.
+
+### Target contract
+
+| Method | Path | Fungsi |
+|---|---|---|
+| `POST` | `/v1/analyses/{analysis_id}/discussions` | Mengirim pertanyaan lanjutan terhadap satu run |
+
+### Keputusan terbuka
+
+- Bentuk response, termasuk cara atribusi tool call dikirim ke client, belum ditetapkan.
+- Apakah jawaban dikirim sebagai stream atau sekali kirim belum ditetapkan.
+- Retention riwayat diskusi, batas laju, dan budget token per diskusi belum ditetapkan.
+
+## Area admin dan feedback
+
+Memantau kualitas output AI, biaya, dan penggunaan, serta menerima masukan pengguna terhadap laporan dan fitur.
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Frontend | Formulir feedback pengguna dan tampilan pemantauan terpisah dari aplikasi utama |
+| Backend | Endpoint admin terpisah yang diaudit, mengembalikan metadata dan agregat |
+| Worker | Sumber metrik run, bukan konsumen endpoint admin |
+| Agent | Tidak terlibat |
+
+<Mermaid
+  title="Diagram 4. Area admin membaca metadata dan agregat. Transaksi mentah, struk, dan prompt penuh tidak diekspos."
+  chart={`flowchart LR
+  ADM["Pengguna admin"] --> API["Endpoint admin terpisah dan diaudit"]
+  API --> RUNS(["Status, latency, dan biaya run AI"])
+  API --> FB(["Feedback pengguna"])
+  API --> USG(["Agregasi penggunaan fitur"])
+  API -.->|"tidak diekspos"| RAW[("Transaksi mentah, struk, dan prompt penuh")]
+  ADM --> AUD["Audit event akses admin"]`}
+/>
+
+Yang dipantau mengikuti metrik yang sudah ditetapkan pada dokumen operasional: umur antrean dan durasi run per stage, jumlah request, token, biaya, timeout, dan kegagalan schema per jenis agent, kegagalan tool call dan validasi artifact, serta rasio run `completed`, `partial`, `failed`, dan `cancelled`.
+
+Batas yang mengikat:
+
+- Endpoint admin terpisah, diaudit, dan tidak dapat membaca transaksi mentah tanpa kebutuhan dan otorisasi yang jelas.
+- Akses admin adalah audit event tersendiri.
+- Pemantauan memuat metadata, bukan prompt penuh atau payload transaksi lengkap.
+
+### Target contract
+
+| Method | Path | Fungsi |
+|---|---|---|
+| `POST` | `/v1/feedback` | Feedback pengguna terhadap laporan atau fitur |
+| `GET` | `/v1/admin/ai-runs` | Pemantauan status, latency, biaya, dan kualitas output AI |
+| `GET` | `/v1/admin/feedback` | Pemantauan feedback pengguna |
+| `GET` | `/v1/admin/usage` | Agregasi penggunaan fitur |
+
+### Keputusan terbuka
+
+- **Peran admin belum ada pada model data.** Membership hanya mengenal `owner` dan `cashier`. Cara pengguna admin diautentikasi dan diotorisasi belum ditetapkan dan tidak boleh diputuskan saat implementasi tanpa keputusan arsitektur.
+- Apakah area admin bersifat global atau terbatas per tenant belum ditetapkan.
+- Schema payload feedback dan masa retention data pemantauan belum ditetapkan.
+
+## Pembatalan run analysis
+
+Memberi pengguna cara menghentikan run yang sedang berjalan tanpa membuang pekerjaan yang terlanjur selesai.
+
+`cancelled` adalah salah satu keadaan terminal pada [state machine analysis](./sistem). Desain ini melengkapi keadaan tersebut dengan jalur yang memicunya.
+
+| Komponen | Tanggung jawab |
+|---|---|
+| Frontend | Aksi batalkan pada layar progres run |
+| Backend | Memindahkan state ke `cancelled` dan mempertahankan artifact yang sudah selesai |
+| Worker | Cara pekerjaan yang sedang berjalan dihentikan belum ditetapkan |
+| Agent | Tidak terlibat |
+
+Artifact yang sudah selesai tetap disimpan untuk keperluan audit, sehingga pekerjaan yang terlanjur dilakukan tidak hilang dari jejak.
+
+### Target contract
+
+| Method | Path | Fungsi |
+|---|---|---|
+| `POST` | `/v1/analyses/{analysis_id}/cancel` | Menghentikan run yang belum mencapai keadaan terminal |
+
+### Keputusan terbuka
+
+- Perlakuan terhadap budget provider yang sudah terpakai pada run yang dibatalkan belum ditetapkan.
+- Apakah stage yang sedang berjalan dihentikan seketika atau dibiarkan selesai sebelum state berpindah belum ditetapkan.
