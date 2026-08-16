@@ -60,11 +60,11 @@
 | `PATCH` | `/v1/products/{id}` | Ubah produk |
 | `POST` | `/v1/transactions` | Input satu transaksi |
 | `POST` | `/v1/transactions/batch` | Batch manual/import terkontrol |
-| `POST` | `/v1/receipt-imports` | Membuat upload session foto struk |
-| `POST` | `/v1/receipt-imports/{id}/complete-upload` | Konfirmasi upload dan antrekan OCR |
-| `GET` | `/v1/receipt-imports/{id}` | Status serta draft hasil ekstraksi |
-| `PATCH` | `/v1/receipt-imports/{id}/draft` | Koreksi field hasil OCR |
-| `POST` | `/v1/receipt-imports/{id}/confirm` | Commit draft sebagai transaksi |
+| `POST` | `/v1/receipt-imports?business_id={business_id}` | Membuat upload session foto struk |
+| `POST` | `/v1/receipt-imports/{id}/complete-upload?business_id={business_id}` | Konfirmasi upload dan antrekan OCR |
+| `GET` | `/v1/receipt-imports/{id}?business_id={business_id}` | Status serta draft hasil ekstraksi |
+| `PATCH` | `/v1/receipt-imports/{id}/draft?business_id={business_id}` | Koreksi field hasil OCR |
+| `POST` | `/v1/receipt-imports/{id}/confirm?business_id={business_id}` | Commit draft sebagai transaksi |
 | `GET` | `/v1/transactions` | List dengan filter tanggal |
 | `GET` | `/v1/transaction-analytics` | Agregasi dan insight |
 | `POST` | `/v1/transaction-exports` | Membuat PDF ringkasan transaksi async |

@@ -90,8 +90,7 @@ Tailwind v4 memindahkan konfigurasi dari JavaScript ke CSS melalui direktif `@th
   --color-line:    #E4E7E6;
   --color-teal-700:#0E5A63;
   --color-amber-600:#D4610A;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-serif:"Source Serif 4", Georgia, serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
 }
 ```
 

@@ -28,10 +28,12 @@ Dokumentasi lintas-repository untuk SimuMarketAI, toolkit decision support bagi 
 14. [Keputusan tech stack dan version pinning](docs/14-tech-stack-decisions.md)
 15. [Dashboard dan app shell](docs/15-dashboard-and-app-shell.md)
 16. [PRD pembangunan MVP](docs/16-prd-mvp.md)
-17. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
-18. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
-19. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
-20. [ADR-004: deterministic tools dimiliki orchestrator](docs/adr/ADR-004-orchestrator-owned-deterministic-tools.md)
+17. [Rencana website dokumentasi publik](docs/17-public-documentation-site-plan.md)
+18. [Matriks evidence konten publik](docs/18-public-content-evidence-matrix.md)
+19. [ADR-001: empat agent OASIS dan deterministic tools](docs/adr/ADR-001-oasis-boundary.md)
+20. [ADR-002: menaikkan frontend ke Next.js 16](docs/adr/ADR-002-frontend-framework-version.md)
+21. [ADR-003: mengubah bobot Launch Readiness Score](docs/adr/ADR-003-launch-readiness-score-weights.md)
+22. [ADR-004: deterministic tools dimiliki orchestrator](docs/adr/ADR-004-orchestrator-owned-deterministic-tools.md)
 
 ## Serah terima antarsesi
 
