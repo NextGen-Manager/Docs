@@ -18,9 +18,9 @@ Di akhir sesi, perbarui: tanggal di atas, tabel Keadaan sekarang, dan bagian Sud
 
 | Repository | Branch kerja | Commit | Belum di-commit |
 |---|---|---|---|
-| `Docs` | `main` | `3ec6787` | pembaruan handover merge Fase 4 belum di-commit |
-| `SimuMarketAI` (frontend) | `feat/phase5-receipt-export` | `b5cb12d` | bersih; branch baru dari `dev` setelah merge Fase 4 |
-| `SimuMarketAI-BE` | `feat/phase5-receipt-export` | `a004466` | bersih; branch baru dari `dev` setelah merge Fase 4 |
+| `Docs` | `main` | `42d4413` | pembaruan status Fase 5 dan hardening awal Fase 6 belum di-commit |
+| `SimuMarketAI` (frontend) | `feat/phase6-automated-hardening` | `2bf6b77` | hardening frontend belum di-commit |
+| `SimuMarketAI-BE` | `feat/phase6-automated-hardening` | `3287389` | hardening backend belum di-commit |
 
 ### Peran branch, ditetapkan 13 Agustus 2026
 
@@ -50,7 +50,9 @@ Bukan ruleset dan bukan izin. Server GitHub gagal me-resolve delta pada thin pac
 - `16` PRD pembangunan MVP: batas scope, pembekuan demo, peran branch, tujuh fase beserta exit criteria, spesifikasi backend dan frontend, dan daftar risiko.
 - `HANDOVER.md` (dokumen ini) menjadi catatan keadaan lintas sesi.
 - `ADR-002` menaikkan frontend ke Next.js 16 karena 14 sudah end of life. Status Accepted.
+- `ADR-005` menetapkan pemilihan Gemini atau OpenAI per deployment tanpa fallback key tersembunyi. Status Accepted.
 - `AGENTS.md` + `CLAUDE.md` di ketiga repository. Masing-masing berdiri sendiri: lima aturan inti ditulis ulang di tiap repo supaya clone tunggal tetap membawanya.
+- Situs dokumentasi publik berbasis Fumadocs tersedia dalam Bahasa Indonesia dan Inggris. Roadmap internal dan handover tetap berada di repository, tetapi tidak masuk navigasi publik.
 
 ### Frontend (`SimuMarketAI`, branch `dev`)
 
@@ -113,6 +115,32 @@ Implementasi dan hardening Fase 4 sudah di-commit per fungsi, dipush, lalu digab
 - Verifikasi final 15 Agustus 2026: backend Ruff, format check, dan mypy bersih; 207 test lulus dan dua test Gemini live skip secara eksplisit. Migrasi PostgreSQL kosong lulus `0001` sampai `0008`, `alembic check`, downgrade `0008` ke `0007`, lalu upgrade ulang. Frontend lint/typecheck bersih, 57 test dan tujuh E2E Chromium lulus, production build berhasil, serta audit production dependency melaporkan nol vulnerability.
 - Verifikasi hardening 16 Agustus 2026: Ruff, format check, dan mypy bersih; 213 test lulus dan dua test Gemini live tetap skip. Image worker dibangun ulang, OASIS berhasil di-import dari `/app` sebagai UID 10001, `/app/log` terverifikasi writable, adapter live dapat di-import, dan Celery worker menjawab `pong`. Tiga recovery task berurutan pada worker process yang sama juga lulus tanpa error lintas event loop.
 - Database dev lokal sempat memiliki schema `0008` dengan revision marker `0007` akibat file migrasi lama yang pernah diedit. Tipe kolom, nullability, default, dan indeks diperiksa satu per satu sebelum marker di-stamp ke `0008`; `alembic check` kemudian lulus tanpa perubahan schema atau data.
+
+Implementasi Fase 5 sudah digabung ke `dev` pada frontend dan backend tanggal 16 Agustus 2026:
+
+- Private object storage memiliki adapter S3-compatible dan memory khusus test. Upload serta download memakai signed URL berumur pendek.
+- Pipeline foto struk mencakup upload, pemeriksaan magic bytes, sanitasi gambar, OCR worker, draft versioned, koreksi, konfirmasi selisih total, dan commit transaksi atomik serta idempotent. OCR tidak dapat membuat transaksi final tanpa konfirmasi pengguna.
+- Frontend `/transaksi/struk` menyediakan review hasil OCR, koreksi item, konfirmasi selisih, state proses/gagal/selesai, dan alur keyboard yang diuji lewat Playwright.
+- Export PDF laporan analisis dan ringkasan transaksi berjalan asinkron. Artifact bersifat private dan diambil melalui signed URL.
+- Retention job membersihkan PDF, gambar struk, raw OCR, dan trace OASIS sesuai masa simpan masing-masing.
+- Test backend memverifikasi receipt import, image validation, export private/idempotent, dan retention. E2E frontend memverifikasi alur receipt dengan transport API terkontrol.
+- Exit criteria lintas stack dengan PaddleOCR, PostgreSQL, Redis/Celery, dan object storage nyata belum dijalankan. Fase 5 selesai secara coding dan contract, tetapi bukti integrasi tersebut masih menjadi pekerjaan Fase 6.
+
+Multi-provider OASIS sudah digabung ke backend `dev` melalui merge `3287389`:
+
+- `OASIS_PROVIDER` hanya menerima `gemini` atau `openai`; pasangan provider/model divalidasi saat startup.
+- Resolver memilih hanya key provider yang ditetapkan dan memetakkannya ke CAMEL `ModelPlatformType`. Key kosong tidak memicu fallback; simulasi menjadi tidak tersedia dan report tetap jujur `partial`.
+- Provider dan model tersimpan pada run manifest. Log meredaksi key Gemini dan OpenAI.
+- Verifikasi tanpa network: Ruff, format, mypy, dan 229 test lulus; tiga smoke test live dilewati karena key asli belum digunakan.
+
+Hardening otomatis awal Fase 6 dikerjakan pada branch `feat/phase6-automated-hardening` di kedua repository kode dan belum di-commit:
+
+- Frontend menjalankan Playwright pada Chromium, Firefox, dan WebKit. Audit aksesibilitas otomatis WCAG A/AA mencakup halaman utama, masuk, dan daftar; temuan kontras serta struktur `dl` pada landing page sudah diperbaiki.
+- Header keamanan frontend dan backend diuji otomatis. Backend juga menolak wildcard CORS dan mode debug pada staging/production, serta hanya mengaktifkan HSTS pada lingkungan terlindungi.
+- CI backend memverifikasi migrasi, backup/restore PostgreSQL pada database terisolasi, revisi Alembic hasil restore, dan bounded readiness load smoke. Backup/restore yang sama sudah diverifikasi lokal sampai revision `0009`; database sementara kemudian dihapus.
+- Dependency audit backend tetap memperlihatkan advisory transitif pada dependency yang dipatok `camel-oasis==0.2.5`. CI menyimpan laporan sebagai artifact dan memberi warning; temuan ini belum dianggap selesai dan tidak dimasukkan ke allowlist tersembunyi.
+- Verifikasi lokal: frontend lint, type-check, 57 unit test, build, audit production dependency, serta 12 alur E2E per browser lulus. Backend Ruff, format, mypy, dan 234 test lulus; tiga smoke test provider live tetap dilewati sampai key tersedia.
+- E2E receipt lintas stack dengan OCR, worker, database, dan object storage nyata, failure injection service, benchmark provider live, serta validasi manusia tetap menjadi pekerjaan Fase 6 berikutnya.
 
 ---
 
@@ -232,12 +260,15 @@ Hal-hal yang sudah diputuskan tetapi mudah terlewat dan berakibat.
 
 ## Langkah berikutnya
 
-Rencana lengkap ada di `docs/16`. Yang harus dibereskan lebih dulu, berurutan:
+Rencana lengkap ada di `docs/16`. Pekerjaan berikutnya adalah Fase 6, berurutan:
 
-1. Mulai Fase 5 dari private object storage, lalu OCR review/confirm, export PDF async, dan retention job pada branch `feat/phase5-receipt-export` di kedua repository kode.
-2. Saat Gemini API key tersedia, jalankan test live dan benchmark berulang. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
-3. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
-4. Scenario comparison tetap Should dan hanya dikerjakan bila scope Must Fase 5 sudah lulus E2E.
+1. Selesaikan E2E lintas stack untuk `unggah struk -> OCR -> review -> commit -> analitik` memakai service nyata, bukan transport mock frontend.
+2. Tambahkan failure injection untuk Redis, object storage, OCR, provider LLM, dan worker termination; pastikan status parsial dan recovery tetap jujur.
+3. Isolasi atau naikkan dependency worker OASIS agar advisory transitif yang tercatat oleh dependency audit dapat ditutup tanpa melanggar pin kompatibilitas.
+4. Saat API key tersedia, jalankan smoke test serta benchmark Gemini dan OpenAI. Catat token, latency, schema failure, dan variance sebenarnya ke `docs/14`; lalu bekukan ukuran cohort dan jumlah round di `docs/04`.
+5. Jalankan pekerjaan validasi manusia: expert review scoring, human-vs-synthetic calibration, dan SUS. Ketiganya tidak boleh digantikan test otomatis.
+6. Pilih dan review lisensi sumber evidence pasar. Sampai keputusan ada, runtime production tetap memakai unavailable provider dan run tetap jujur berstatus `partial`.
+7. Scenario comparison tetap Should dan baru dikerjakan setelah seluruh scope Must serta quality gate Fase 6 lulus.
 
 ---
 
