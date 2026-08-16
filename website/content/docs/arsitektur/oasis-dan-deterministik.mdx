@@ -1,27 +1,158 @@
 ---
 title: OASIS dan engine deterministik
-description: Pembagian tanggung jawab antara OASIS, agent, dan engine deterministik.
+description: Empat council, protokol round, typed artifact, batas dengan engine deterministik, serta validasi, budget, trace, dan fallback parsial.
 ---
 
-OASIS dipakai sebagai environment interaksi agent, bukan sebagai backend umum atau kalkulator. Orchestrator SimuMarket AI membangun konteks terstruktur, membuat council, membatasi action, menjalankan round, menyimpan trace, dan memvalidasi artifact.
+OASIS dipakai sebagai environment interaksi agent, bukan sebagai backend umum atau kalkulator. Orchestrator SimuMarket AI yang membangun konteks terstruktur, membuat council, membatasi action, menjalankan round, menyimpan trace, dan memvalidasi artifact.
+
+## Kenapa agent tidak boleh menjadi sumber angka
+
+Angka pada laporan menentukan keputusan modal seseorang. Angka semacam itu harus dapat direproduksi, diuji, dan ditelusuri.
+
+- **Reproducible.** Engine deterministik memberi hasil yang sama untuk input yang sama. Output LLM tidak dijamin identik antar-run, bahkan dengan seed dan konfigurasi yang sama.
+- **Dapat diuji.** Formula finansial punya golden test dengan fixture tetap. Teks yang dihasilkan model tidak dapat diuji dengan cara yang sama.
+- **Dapat ditelusuri.** Setiap angka harus dapat dipetakan ke input, evidence, atau hasil kalkulator. Angka yang lahir dari generasi teks tidak punya jejak semacam itu.
+- **Tidak boleh gagal diam-diam.** Model yang tidak yakin tetap menghasilkan kalimat yang meyakinkan. Engine yang kekurangan input mengembalikan penanda tidak terdefinisi.
+
+Karena itu aturannya keras: kalau sebuah angka dapat ditelusuri ke teks yang digenerate LLM, itu bug, sekalipun angkanya kebetulan benar.
 
 ## Peran setiap council
 
 | Council | Boleh dilakukan | Tidak boleh dilakukan |
 |---|---|---|
-| Market Analyst | Menafsirkan evidence ID dan mengkritik kondisi pasar | Membuat evidence baru |
+| Market Analyst | Menafsirkan evidence yang tersedia dan mengkritik kondisi pasar | Membuat evidence baru |
 | Customer Persona | Merespons stimulus sebagai persona sintetis | Mengklaim sebagai survei populasi nyata |
-| Finance | Mengkritik asumsi dan meminta kalkulator deterministik | Mengarang BEP, margin, atau payback |
+| Finance | Mengkritik asumsi dan membandingkan skenario | Mengarang BEP, margin, atau payback |
 | Report | Menyusun narasi dari artifact tervalidasi | Menambah angka tanpa provenance |
 
-Finance dan scoring berjalan dari typed input terlepas dari keberhasilan agent. Volume yang diminta council dibatasi pada rentang input pengguna. Narrative validator menolak angka yang tidak ada pada input, evidence, finance, score, atau simulation artifact yang sah.
+Setiap council berisi beberapa personality instance dengan mandate berbeda, bukan satu agent yang berbicara sendiri. Market Analyst menjalankan Opportunity Scout, Competition Skeptic, dan Evidence Auditor secara berurutan sehingga "menantang" punya sesuatu yang benar-benar ditantang. Finance menjalankan perspektif conservative, base, dan optimistic beserta assumption auditor. Report menjalankan synthesizer, red-team reviewer, dan evidence editor.
 
-## Perlindungan data
+## Protokol round Customer Persona
 
-Hanya `SimulationRequest` terstruktur yang dapat keluar menuju provider. ID di-hash dengan salt. Email, telepon, dan URL pada free text direduksi. Nama pelanggan, nomor telepon, teks struk mentah, dan catatan bebas tidak pernah menjadi prompt provider.
+Cohort berisi 12 sampai 24 persona sintetis yang dibagi seimbang ke empat archetype: budget-driven, convenience-driven, quality-driven, dan social atau family-driven. Jumlah itu dipilih dari pertimbangan biaya dan latensi, bukan karena representatif secara statistik.
 
-## Integrasi provider
+```text
+Round 0  baseline privat sebelum melihat respons lain
+Round 1  exposure terhadap concept card yang sama
+Round 2  interaksi antarpersona melalui feed
+Round 3  controlled intervention pada satu variabel
+Final    ballot terstruktur dan alasan singkat
+```
 
-Integrasi CAMEL/OASIS dan provider model dimuat melalui adapter. Deployment memilih Gemini atau OpenAI beserta modelnya melalui environment. Setiap artifact yang dihasilkan tetap melewati validator yang sama sebelum dapat digunakan oleh report.
+Round 0 dijalankan sebelum exposure supaya efek ikut-ikutan tidak menghapus preferensi awal. Posisi sebelum dan sesudah exposure sama-sama disimpan, sehingga pengaruh sosial dapat diamati, bukan disembunyikan.
 
-Referensi framework: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
+Action yang tersedia bagi persona dibatasi pada komentar, like, dislike, purchase, dan tidak melakukan apa-apa. `INTERVIEW` sengaja tidak dimasukkan ke daftar action agar agent tidak dapat mewawancarai dirinya sendiri; wawancara selalu dimulai orchestrator.
+
+Tiga angka sengaja tidak diambil dari model. Jumlah reaksi positif dihitung dari action yang tercatat pada trace, pergeseran opini dihitung dengan membandingkan ballot awal dan akhir, dan seluruh angka finansial berasal dari kalkulator.
+
+## Typed artifact
+
+Prosa bebas tidak pernah diagregasi langsung. Setiap output council diubah menjadi artifact bertipe dengan schema version, checksum, dan daftar artifact sumbernya.
+
+| Artifact | Dihasilkan oleh |
+|---|---|
+| `MarketAssessment` | Market Analyst Council |
+| `CustomerSimulationResult` | Customer Persona Council |
+| `FinanceScenarioResult` | Finance Council dan kalkulator |
+| `ScoreResult` | Scoring engine |
+| `ReportDraft` dan `ReportReview` | Report Council |
+
+Council berikutnya menerima artifact yang sudah divalidasi, bukan seluruh riwayat percakapan mentah. Report Council menunggu sampai artifact hulu tersedia atau dinyatakan gagal secara eksplisit, sehingga laporan tidak disusun dari bagian kosong.
+
+## Batas dengan engine deterministik
+
+Kalkulator finansial bukan tool yang boleh dipilih model. Orchestrator menjalankannya lebih dulu untuk batas minimum, dasar, dan maksimum, lalu memberikan hasilnya kepada Finance Council untuk dikritik.
+
+<Mermaid
+  title="Diagram 1. Jalur dari input ke laporan: council menghasilkan typed artifact, engine deterministik menghasilkan angka, validator menjadi gerbang terakhir."
+  chart={`flowchart TB
+  IN["Input pengguna dan evidence snapshot"] --> ORCH["Orchestrator"]
+  ORCH --> CALC["Kalkulator finansial deterministik"]
+  ORCH --> MA["Market Analyst Council"]
+  ORCH --> CP["Customer Persona Council"]
+  CALC --> FC["Finance Council"]
+  MA --> A1(["MarketAssessment"])
+  CP --> A2(["CustomerSimulationResult"])
+  CALC --> A3(["FinanceScenarioResult"])
+  FC --> A3
+  A1 --> SC["Scoring engine"]
+  A2 --> SC
+  A3 --> SC
+  SC --> A4(["ScoreResult"])
+  A1 --> RC["Report Council"]
+  A2 --> RC
+  A3 --> RC
+  A4 --> RC
+  RC --> A5(["ReportDraft dan ReportReview"])
+  A5 --> VAL["Validator schema, kutipan, dan aritmetika"]
+  VAL --> OUT["Laporan versioned"]
+  VAL -->|"artifact ditolak"| PART["Bagian ditandai unavailable, run partial"]`}
+/>
+
+Node berbentuk kapsul adalah typed artifact; node persegi adalah proses. Perhatikan bahwa `FinanceScenarioResult` lahir dari kalkulator, bukan dari Finance Council, dan bahwa tidak ada panah dari council mana pun langsung ke laporan tanpa melewati validator.
+
+Konsekuensinya:
+
+- keberhasilan perhitungan tidak bergantung pada keputusan model untuk memanggil tool;
+- permintaan volume di luar rentang input pengguna di-clamp dan dicatat;
+- finance dan scoring tetap berjalan walaupun seluruh council gagal.
+
+Keputusan ini tercatat pada ADR-001 dan ADR-004, ringkasannya ada di [Ringkasan keputusan arsitektur](/docs/keputusan/ringkasan-adr).
+
+## Validasi artifact
+
+Seluruh output council melewati validator yang sama, apa pun runtime yang menghasilkannya. Selain validasi schema, ada dua pemeriksaan yang menentukan:
+
+- observasi pasar hanya boleh menunjuk metric yang benar-benar ada pada evidence snapshot. Menunjuk metric lain berarti agent mengarang evidence, dan artifact ditolak.
+- kritik finansial hanya boleh menunjuk tool call yang benar-benar dihasilkan kalkulator, sehingga setiap kritik punya dasar yang dapat ditelusuri.
+
+Pada tahap akhir, narrative validator menolak angka yang tidak dapat dicocokkan dengan input, evidence, hasil finance, skor, atau artifact simulasi yang sah. Report tidak dapat menyisipkan angka baru.
+
+## Budget, timeout, dan retry
+
+Setiap run memiliki batas keras yang benar-benar menghentikan eksekusi, bukan sekadar dicatat.
+
+| Batas | Fungsi |
+|---|---|
+| Jumlah persona dan round | Menahan biaya dan menjaga trace tetap dapat dibaca |
+| Token budget | Menghentikan run yang melebihi anggaran token |
+| Wall clock | Menghentikan run yang terlalu lama walaupun token masih tersisa |
+| Concurrency limit | Membatasi panggilan provider yang berjalan bersamaan |
+| Retry limit | Membatasi pengulangan; error schema tidak diulang tanpa perubahan |
+| Timeout task worker | Menghentikan task pada level Celery, di bawah masa recovery lease |
+
+Recovery lease selalu lebih panjang daripada hard timeout task, sehingga task yang masih hidup tidak dapat diambil worker lain terlebih dahulu.
+
+## Trace
+
+Satu analysis run memakai environment dan file trace yang unik. Trace disimpan sebagai artifact per run, bukan file global yang ditimpa.
+
+- Direktori dibuat per run di bawah root trace yang dikonfigurasi.
+- Trace tidak dihapus secara implisit oleh run berikutnya.
+- Penghapusan dilakukan retention job terjadwal.
+- Persona tidak membawa memory lintas user maupun lintas skenario.
+- Correlation ID yang sama menghubungkan request API, task Celery, trace, dan laporan.
+
+## Fallback parsial
+
+Ketika OASIS timeout, runtime tidak terpasang, atau provider gagal:
+
+- laporan tetap memuat evidence, finance, dan skor yang dapat dihitung;
+- bagian simulasi berstatus `unavailable` dengan alasan aman;
+- komponen simulasi tidak diberi nilai bawaan pada skor;
+- confidence turun sesuai rule;
+- run berakhir `partial`, bukan `completed`.
+
+Kredensial provider yang tidak diisi adalah konfigurasi degradasi yang sah, bukan kesalahan sistem. Sistem tidak menggantinya dengan output buatan dan tidak menampilkan hasil agent palsu.
+
+## Perlindungan data menuju provider
+
+Hanya payload `SimulationRequest` terstruktur yang dapat keluar menuju provider, dan payload itu dibangun pada satu tempat sebagai allowlist. Tidak ada field yang mampu membawa email, nomor telepon, nama pelanggan, atau teks struk mentah. Identifier diganti digest bergaram sehingga provider tidak pernah melihat `user_id` atau `analysis_id` yang asli.
+
+Teks bebas pengguna diperlakukan sebagai data, bukan instruksi: karakter kontrol dan tanda pemformatan tersembunyi dibuang, panjang dibatasi, dan pola kontak direduksi walaupun field tersebut memang tidak seharusnya memuatnya. Rinciannya ada pada [Keamanan dan privasi](/docs/arsitektur/keamanan-dan-privasi).
+
+## Pemilihan provider
+
+Provider dan model dipilih per deployment, bukan dari request pengguna. Gemini dan OpenAI memakai council protocol, sanitizer, budget, dan validator artifact yang sama. Tidak ada fallback otomatis antar-provider, dan model berlabel `-preview` ditolak saat startup karena dapat berubah tanpa pemberitahuan dan membatalkan perbandingan antar-run.
+
+Referensi framework: [dokumentasi OASIS](https://docs.oasis.camel-ai.org/introduction).

@@ -1,27 +1,158 @@
 ---
-title: OASIS and deterministic engines
-description: How responsibilities are divided between OASIS, agents, and deterministic engines.
+title: OASIS and the deterministic engine
+description: The four councils, the round protocol, typed artifacts, the boundary with deterministic code, plus validation, budgets, traces, and partial fallback.
 ---
 
-OASIS is used as an agent-interaction environment, not as a general backend or calculator. The SimuMarket AI orchestrator builds structured context, creates councils, limits actions, runs rounds, stores traces, and validates artifacts.
+OASIS is used as an agent interaction environment, not as a general backend and not as a calculator. The SimuMarket AI orchestrator builds the structured context, creates the councils, restricts the action space, drives the rounds, stores the trace, and validates every artifact.
 
-## Council responsibilities
+## Why agents may not be the source of numbers
 
-| Council | Allowed | Not allowed |
+The numbers in a report decide how someone spends their capital. Numbers like that must be reproducible, testable, and traceable.
+
+- **Reproducible.** A deterministic engine returns the same result for the same input. LLM output is not guaranteed identical between runs, even with the same seed and configuration.
+- **Testable.** Financial formulas have golden tests with fixed fixtures. Generated prose cannot be tested the same way.
+- **Traceable.** Every figure must map back to an input, an evidence item, or a calculator result. A figure born from text generation has no such trail.
+- **Must not fail silently.** An unsure model still produces a confident sentence. An engine missing an input returns an explicit undefined marker.
+
+Hence the hard rule: if a number can be traced to LLM-generated text, that is a bug, even when the number happens to be right.
+
+## What each council does
+
+| Council | May do | May not do |
 |---|---|---|
-| Market Analyst | Interpret evidence IDs and critique market conditions | Create new evidence |
-| Customer Persona | Respond to stimuli as a synthetic persona | Claim to represent a real population survey |
-| Finance | Critique assumptions and request the deterministic calculator | Invent break-even, margin, or payback values |
+| Market Analyst | Interpret available evidence and critique market conditions | Invent new evidence |
+| Customer Persona | Respond to a stimulus as a synthetic persona | Claim to be a real population survey |
+| Finance | Critique assumptions and compare scenarios | Invent break-even, margin, or payback |
 | Report | Compose narrative from validated artifacts | Add numbers without provenance |
 
-Finance and scoring execute from typed inputs regardless of agent success. A council's requested volume is clamped to the user's input range. Narrative validation rejects numbers absent from valid input, evidence, finance, score, or simulation artifacts.
+Each council holds several personality instances with different mandates, not a single agent talking to itself. Market Analyst runs an Opportunity Scout, a Competition Skeptic, and an Evidence Auditor in sequence so that "challenging" has something real to challenge. Finance runs conservative, base, and optimistic perspectives plus an assumption auditor. Report runs a synthesizer, a red-team reviewer, and an evidence editor.
 
-## Data protection
+## The Customer Persona round protocol
 
-Only a structured `SimulationRequest` may leave for the provider. IDs are salted and hashed. Email addresses, phone numbers, and URLs in free text are redacted. Customer names, phone numbers, raw receipt text, and free-form notes never enter provider prompts.
+The cohort holds 12 to 24 synthetic personas split evenly across four archetypes: budget-driven, convenience-driven, quality-driven, and social or family-driven. That size comes from cost and latency considerations, not from statistical representativeness.
 
-## Provider integration
+```text
+Round 0  private baseline before seeing anyone else
+Round 1  exposure to the same concept card
+Round 2  persona-to-persona interaction through the feed
+Round 3  controlled intervention on a single variable
+Final    structured ballot with short reasons
+```
 
-CAMEL/OASIS and model providers are loaded through an adapter. Each deployment selects Gemini or OpenAI and its model through environment configuration. Every generated artifact passes through the same validators before it can be used in a report.
+Round 0 runs before exposure so herd effects cannot erase initial preferences. Positions before and after exposure are both stored, so social influence can be observed rather than hidden.
+
+The action space available to personas is limited to comment, like, dislike, purchase, and do nothing. `INTERVIEW` is deliberately kept out of the action list so an agent cannot interview itself; interviews are always initiated by the orchestrator.
+
+Three numbers are deliberately not taken from the model. Positive reactions are counted from actions recorded in the trace, opinion shift is computed by comparing baseline and final ballots, and every financial figure comes from the calculator.
+
+## Typed artifacts
+
+Free prose is never aggregated directly. Every council output becomes a typed artifact with a schema version, a checksum, and the list of artifacts it came from.
+
+| Artifact | Produced by |
+|---|---|
+| `MarketAssessment` | Market Analyst Council |
+| `CustomerSimulationResult` | Customer Persona Council |
+| `FinanceScenarioResult` | Finance Council and the calculator |
+| `ScoreResult` | Scoring engine |
+| `ReportDraft` and `ReportReview` | Report Council |
+
+The next council receives validated artifacts, not the raw conversation history. The Report Council waits until upstream artifacts exist or are explicitly marked failed, so a report is never assembled from empty parts.
+
+## The boundary with deterministic code
+
+The financial calculator is not a tool the model may choose. The orchestrator runs it first for the minimum, base, and maximum bounds, then hands the results to the Finance Council to critique.
+
+<Mermaid
+  title="Diagram 1. From input to report: councils produce typed artifacts, deterministic engines produce numbers, and the validator is the last gate."
+  chart={`flowchart TB
+  IN["User input and evidence snapshot"] --> ORCH["Orchestrator"]
+  ORCH --> CALC["Deterministic financial calculator"]
+  ORCH --> MA["Market Analyst Council"]
+  ORCH --> CP["Customer Persona Council"]
+  CALC --> FC["Finance Council"]
+  MA --> A1(["MarketAssessment"])
+  CP --> A2(["CustomerSimulationResult"])
+  CALC --> A3(["FinanceScenarioResult"])
+  FC --> A3
+  A1 --> SC["Scoring engine"]
+  A2 --> SC
+  A3 --> SC
+  SC --> A4(["ScoreResult"])
+  A1 --> RC["Report Council"]
+  A2 --> RC
+  A3 --> RC
+  A4 --> RC
+  RC --> A5(["ReportDraft and ReportReview"])
+  A5 --> VAL["Schema, citation, and arithmetic validator"]
+  VAL --> OUT["Versioned report"]
+  VAL -->|"artifact rejected"| PART["Section marked unavailable, run partial"]`}
+/>
+
+Capsule-shaped nodes are typed artifacts; rectangles are processes. Note that `FinanceScenarioResult` originates from the calculator rather than the Finance Council, and that no arrow runs from any council straight into the report without passing the validator.
+
+The consequences:
+
+- calculation success does not depend on a model deciding to call a tool;
+- a requested volume outside the user's input range is clamped and recorded;
+- finance and scoring still run even if every council fails.
+
+These decisions are recorded in ADR-001 and ADR-004, summarised in [Architecture decision summary](/en/docs/keputusan/ringkasan-adr).
+
+## Artifact validation
+
+All council output passes through the same validator, whichever runtime produced it. Beyond schema validation, two checks matter most:
+
+- a market observation may only cite metrics the evidence snapshot actually contains. Citing anything else means the agent invented evidence, and the artifact is rejected.
+- a finance critique may only cite tool calls the calculator really produced, so every critique has a traceable basis.
+
+At the final stage, a narrative validator rejects any number that cannot be matched to the input, evidence, finance results, score, or a legitimate simulation artifact. The report cannot introduce a new figure.
+
+## Budgets, timeouts, and retries
+
+Every run has hard limits that actually stop execution rather than merely being recorded.
+
+| Limit | Purpose |
+|---|---|
+| Persona and round count | Contain cost and keep the trace readable |
+| Token budget | Stop a run that exceeds its token allowance |
+| Wall clock | Stop a run that takes too long even with tokens left |
+| Concurrency limit | Cap simultaneous provider calls |
+| Retry limit | Bound repetition; schema errors are not repeated unchanged |
+| Worker task timeout | Stop the task at the Celery level, below the recovery lease |
+
+The recovery lease is always longer than the hard task timeout, so a task that is still alive cannot be reclaimed by another worker first.
+
+## Traces
+
+One analysis run uses a unique environment and trace file. The trace is stored as a per-run artifact, not a global file that gets overwritten.
+
+- A directory is created per run under the configured trace root.
+- A trace is never implicitly deleted by the next run.
+- Deletion happens through a scheduled retention job.
+- Personas carry no memory across users or across scenarios.
+- The same correlation ID links the API request, the Celery task, the trace, and the report.
+
+## Partial fallback
+
+When OASIS times out, the runtime is not installed, or the provider fails:
+
+- the report still carries the evidence, finance, and score that could be computed;
+- the simulation section is marked `unavailable` with a safe reason;
+- the simulation component receives no default value in the score;
+- confidence drops according to the rule;
+- the run ends `partial`, not `completed`.
+
+Unset provider credentials are a legitimate degraded configuration, not a system error. The system does not substitute invented output and does not present fabricated agent results.
+
+## Protecting data on the way to the provider
+
+Only a structured `SimulationRequest` payload can leave toward a provider, and that payload is built in one place as an allowlist. No field is capable of carrying an email, a phone number, a customer name, or raw receipt text. Identifiers are replaced with salted digests, so a provider never sees a real `user_id` or `analysis_id`.
+
+User free text is treated as data rather than instruction: control characters and hidden formatting marks are stripped, length is capped, and contact-shaped patterns are redacted even though the field should never have contained one. Details are in [Security and privacy](/en/docs/arsitektur/keamanan-dan-privasi).
+
+## Provider selection
+
+Provider and model are chosen per deployment, never from a user request. Gemini and OpenAI use the same council protocol, sanitizer, budgets, and artifact validators. There is no automatic cross-provider fallback, and models tagged `-preview` are rejected at startup because they can change without notice and would invalidate every comparison recorded against a run.
 
 Framework reference: [OASIS documentation](https://docs.oasis.camel-ai.org/introduction).
