@@ -1,42 +1,134 @@
 ---
 title: Arsitektur sistem
-description: Komponen, alur pemrosesan, penyimpanan data, dan ketahanan sistem SimuMarket AI.
+description: Komponen end-to-end, alur pemrosesan, pembagian penyimpanan, dan pola ketahanan SimuMarket AI.
 ---
 
-```text
-Browser Next.js
-  -> FastAPI /v1
-     -> PostgreSQL
-     -> Redis -> Celery worker
-     -> private S3-compatible storage
-     -> evidence provider
-     -> OASIS/CAMEL adapter -> Gemini atau OpenAI
-```
+Arsitektur memisahkan fakta, simulasi, perhitungan, dan narasi. Pemisahan itu membuat hasil dapat diuji dan membuat kegagalan AI tidak menjatuhkan seluruh sistem.
+
+Browser memanggil frontend, frontend meneruskan ke API melalui proxy server-side, dan API menyimpan state ke PostgreSQL sambil mengirim pekerjaan berat ke worker melalui Redis. Worker adalah satu-satunya komponen yang berbicara dengan evidence provider, OCR, dan provider LLM.
+
+<Mermaid
+  title="Diagram 1. Komponen end-to-end: browser, frontend, API, worker, penyimpanan, dan integrasi eksternal."
+  chart={`flowchart LR
+  U["Browser"] --> FE["Next.js frontend"]
+  FE -->|"JSON dan SSE"| API["FastAPI /v1"]
+
+  subgraph store["Penyimpanan"]
+    DB[("PostgreSQL")]
+    REDIS[("Redis")]
+    OBJ[("Object storage privat")]
+  end
+
+  subgraph async["Pemrosesan asinkron"]
+    WORKER["Celery worker"]
+    BEAT["Celery beat"]
+  end
+
+  subgraph ext["Integrasi eksternal"]
+    EV["Evidence provider"]
+    OCR["OCR PaddleOCR"]
+    LLM["Provider LLM"]
+  end
+
+  API --> DB
+  API --> REDIS
+  API --> OBJ
+  REDIS --> WORKER
+  REDIS --> BEAT
+  WORKER --> DB
+  WORKER --> OBJ
+  WORKER --> ENG["Engine deterministik"]
+  WORKER --> EV
+  WORKER --> OCR
+  WORKER --> OASIS["OASIS adapter"]
+  OASIS --> LLM
+  BEAT --> DB`}
+/>
 
 ## Tanggung jawab komponen
 
-| Komponen | Tanggung jawab |
-|---|---|
-| Next.js | Input, route guard, status job, dan rendering output server |
-| FastAPI | Authentication, validation, authorisation, dan use-case API |
-| PostgreSQL | System of record untuk identity, bisnis, transaksi, evidence, analysis, event, dan artifact metadata |
-| Redis | Broker Celery dan transport event, bukan system of record |
-| Worker | Analysis, OASIS, OCR, PDF, recovery, dan retention job |
-| Object storage | Foto struk dan PDF privat dengan signed URL |
-| OASIS trace | Artifact per attempt yang terisolasi dan mempunyai retention |
+| Komponen | Tanggung jawab | Yang tidak dilakukan |
+|---|---|---|
+| Next.js frontend | Input, route guard, status job, rendering hasil | Menghitung skor, uang, atau agregat |
+| FastAPI | Authentication, validation, authorisation, use case API | Menjalankan simulasi atau OCR di request thread |
+| Celery worker | Analysis, OASIS, OCR, PDF, recovery, retention | Menjadi tempat kebenaran state |
+| Celery beat | Menjadwalkan rekonsiliasi run dan retention artifact | Mengubah hasil run |
+| PostgreSQL | System of record identity, usaha, transaksi, evidence, analysis, event, metadata artifact | |
+| Redis | Broker Celery dan transport event | Menyimpan report final |
+| Object storage | Foto struk dan PDF privat dengan signed URL | Menyimpan object publik permanen |
+| OCR | Mengubah gambar struk menjadi draft berconfidence | Membuat transaksi final |
+| Provider LLM | Menjalankan agent melalui adapter CAMEL | Menghasilkan angka otoritatif |
 
-## Alur analisis
+Frontend memanggil backend melalui route proxy server-side, sehingga browser memakai path API same-origin dan credential provider tidak pernah sampai ke bundle klien.
 
-`POST /v1/analyses` memvalidasi input, menyimpan run `queued`, commit, lalu mengirim task. Worker mengeksekusi stage secara berurutan. State dipersist sebelum event diterbitkan. Recovery lease mencegah task yang masih hidup diambil worker lain terlalu awal.
+## Alur Market Analysis
 
-Setiap run menyimpan immutable input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, dan artifact agent.
+1. API memvalidasi input, prerequisite edukasi, dan idempotency key.
+2. API menyimpan run `queued` beserta snapshot input yang immutable, melakukan commit, lalu mengirim task.
+3. Worker mengumpulkan evidence snapshot. Setiap field membawa source, waktu observasi, dan quality.
+4. Orchestrator membangun konteks terstruktur dan menjalankan empat council.
+5. Engine deterministik menghitung finance dari typed input, lalu scoring memakai rule versioned.
+6. Report council menyusun narasi hanya dari artifact yang sudah divalidasi.
+7. Validator memeriksa schema, kutipan, dan konsistensi aritmetika.
+8. Run menjadi `completed`, `partial`, `failed`, atau `cancelled`.
+
+State disimpan ke PostgreSQL sebelum event dipublikasikan melalui Redis. Urutan ini yang membuat polling snapshot selalu menjadi rujukan yang sah ketika SSE terputus.
+
+<Mermaid
+  title="Diagram 2. State machine analysis, dari queued sampai salah satu dari empat keadaan terminal."
+  chart={`stateDiagram-v2
+  [*] --> queued
+  queued --> collecting_evidence
+  collecting_evidence --> building_context
+  building_context --> simulating
+  building_context --> calculating_finance: tahap simulasi dilewati
+  simulating --> calculating_finance
+  calculating_finance --> scoring
+  scoring --> composing_report
+  composing_report --> validating_report
+  validating_report --> completed
+  validating_report --> partial
+  validating_report --> failed
+  queued --> cancelled
+  simulating --> cancelled
+  completed --> [*]
+  partial --> [*]
+  failed --> [*]
+  cancelled --> [*]`}
+/>
+
+Urutan stage bersifat linear. Cabang `building_context -> calculating_finance` dipakai ketika deployment tidak memiliki adapter agent sama sekali, sehingga stage `simulating` dikeluarkan dari rencana dan dilaporkan sebagai skipped, bukan dihitung sebagai pekerjaan yang selesai. Tiga keadaan terminal pertama ditentukan pada `validating_report`; `cancelled` melengkapi state machine untuk run yang berhenti sebelum selesai, dan diagram menampilkan dua contoh titik keluarnya.
+
+Setiap run menyimpan snapshot input, snapshot evidence, correlation ID, informasi idempotency, model manifest, prompt manifest, cohort, seed, budget, dan artifact agent.
+
+## Alur foto struk
+
+```text
+created -> uploading -> queued -> preprocessing -> extracting
+  -> ready_for_review -> confirmed -> committed
+  | failed | cancelled
+```
+
+Upload berjalan langsung dari browser ke object storage melalui signed URL, sehingga file besar tidak melewati API. OCR dijalankan worker pada queue terpisah agar gambar besar tidak menahan permintaan transaksi biasa.
+
+## Pembagian penyimpanan
+
+- **PostgreSQL** adalah system of record. Uang disimpan sebagai integer rupiah, waktu disimpan dalam UTC, dan identifier berupa UUID tanpa makna bisnis.
+- **Redis** menyimpan queue dan transport event jangka pendek. Job yang hilang direkonsiliasi dari state PostgreSQL, bukan dari Redis.
+- **Object storage** menyimpan foto struk dan PDF export sebagai object privat.
+- **Trace OASIS** ditulis per run ke direktori unik, diregistrasikan sebagai artifact, lalu dihapus melalui retention job yang eksplisit. Tidak ada file trace global yang ditimpa antar-run.
 
 ## Ketahanan sistem
 
-- Idempotency mencegah transaksi, run, dan export ganda.
-- Resource tenant lain terlihat sebagai `404`.
-- SSE dapat dilanjutkan dengan `Last-Event-ID`.
-- Polling membaca snapshot otoritatif ketika SSE gagal.
-- Failure code aman dipisahkan dari trace internal.
-- Signed URL berumur pendek dan object tetap privat.
-- Retention job menghapus artifact tanpa menyamarkan kegagalan penghapusan.
+- Idempotency key mencegah analysis, transaksi, dan export ganda.
+- Recovery lease mencegah task yang masih hidup diambil worker lain terlalu awal, sekaligus memungkinkan run yang worker-nya mati dikembalikan ke antrean.
+- Timeout terpisah per provider data dan per panggilan LLM.
+- Retry hanya untuk error transient. Error schema atau policy tidak diulang tanpa perubahan.
+- Budget keras per run untuk jumlah persona, round, concurrency, token, dan wall clock.
+- Fallback deterministik ketika OASIS gagal, dengan hasil berstatus `partial`.
+- SSE dapat dilanjutkan dengan `Last-Event-ID`; polling snapshot menjadi cadangan.
+- Correlation ID mengalir dari API ke Celery, trace OASIS, hingga laporan dan log.
+
+## Batas antar repository
+
+Frontend, backend, dan dokumentasi adalah tiga repository terpisah tanpa import lintas direktori. Kontrak di antara mereka adalah HTTP API dan skema OpenAPI, bukan modul bersama. Rincian struktur kode ada pada [Struktur kode dan standar](/docs/engineering/struktur-dan-standar).

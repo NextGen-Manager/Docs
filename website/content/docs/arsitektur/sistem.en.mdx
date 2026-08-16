@@ -1,42 +1,134 @@
 ---
 title: System architecture
-description: Components, bounded contexts, state, storage, and reliability in SimuMarket AI.
+description: End-to-end components, processing flows, storage responsibilities, and the resilience patterns behind SimuMarket AI.
 ---
 
-```text
-Next.js browser
-  -> FastAPI /v1
-     -> PostgreSQL
-     -> Redis -> Celery worker
-     -> private S3-compatible storage
-     -> evidence provider
-     -> OASIS/CAMEL adapter -> Gemini or OpenAI
-```
+The architecture separates facts, simulation, calculation, and narrative. That separation makes results testable and keeps an AI failure from taking the whole system down.
+
+The browser calls the frontend, the frontend forwards to the API through a server-side proxy, and the API persists state to PostgreSQL while pushing heavy work to the worker through Redis. The worker is the only component that talks to the evidence provider, OCR, and the LLM provider.
+
+<Mermaid
+  title="Diagram 1. End-to-end components: browser, frontend, API, worker, storage, and external integrations."
+  chart={`flowchart LR
+  U["Browser"] --> FE["Next.js frontend"]
+  FE -->|"JSON and SSE"| API["FastAPI /v1"]
+
+  subgraph store["Storage"]
+    DB[("PostgreSQL")]
+    REDIS[("Redis")]
+    OBJ[("Private object storage")]
+  end
+
+  subgraph async["Asynchronous processing"]
+    WORKER["Celery worker"]
+    BEAT["Celery beat"]
+  end
+
+  subgraph ext["External integrations"]
+    EV["Evidence provider"]
+    OCR["OCR PaddleOCR"]
+    LLM["LLM provider"]
+  end
+
+  API --> DB
+  API --> REDIS
+  API --> OBJ
+  REDIS --> WORKER
+  REDIS --> BEAT
+  WORKER --> DB
+  WORKER --> OBJ
+  WORKER --> ENG["Deterministic engines"]
+  WORKER --> EV
+  WORKER --> OCR
+  WORKER --> OASIS["OASIS adapter"]
+  OASIS --> LLM
+  BEAT --> DB`}
+/>
 
 ## Component responsibilities
 
-| Component | Responsibility |
-|---|---|
-| Next.js | Input, route guards, job status, and server-output rendering |
-| FastAPI | Authentication, validation, authorisation, and use-case APIs |
-| PostgreSQL | System of record for identity, businesses, transactions, evidence, analyses, events, and artifact metadata |
-| Redis | Celery broker and event transport, not the system of record |
-| Worker | Analysis, OASIS, OCR, PDF, recovery, and retention jobs |
-| Object storage | Private receipt photos and PDFs accessed through signed URLs |
-| OASIS trace | Isolated per-attempt artifacts with explicit retention |
+| Component | Responsibility | What it does not do |
+|---|---|---|
+| Next.js frontend | Input, route guards, job status, rendering results | Compute scores, money, or aggregates |
+| FastAPI | Authentication, validation, authorisation, use-case API | Run simulation or OCR on the request thread |
+| Celery worker | Analysis, OASIS, OCR, PDF, recovery, retention | Act as the source of truth for state |
+| Celery beat | Schedule run reconciliation and artifact retention | Alter run results |
+| PostgreSQL | System of record for identity, businesses, transactions, evidence, analyses, events, artifact metadata | |
+| Redis | Celery broker and event transport | Store the final report |
+| Object storage | Private receipt photos and PDFs behind signed URLs | Hold permanently public objects |
+| OCR | Turn a receipt image into a draft with confidence | Create a final transaction |
+| LLM provider | Run agents through the CAMEL adapter | Produce authoritative numbers |
 
-## Analysis pipeline
+The frontend calls the backend through a server-side proxy route, so the browser uses same-origin API paths and provider credentials never reach the client bundle.
 
-`POST /v1/analyses` validates input, stores and commits a `queued` run, then dispatches a task. The worker executes stages in order. State is persisted before event publication. Recovery leases prevent a live task from being reclaimed too early.
+## Market Analysis flow
 
-Every run records an immutable input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, and agent artifacts.
+1. The API validates input, education prerequisites, and the idempotency key.
+2. The API stores a `queued` run with an immutable input snapshot, commits, and dispatches the task.
+3. The worker collects the evidence snapshot. Every field carries a source, observation time, and quality.
+4. The orchestrator builds structured context and runs the four councils.
+5. The deterministic engine computes finance from typed input, then scoring applies versioned rules.
+6. The report council composes the narrative only from validated artifacts.
+7. Validators check schema, citations, and arithmetic consistency.
+8. The run becomes `completed`, `partial`, `failed`, or `cancelled`.
 
-## Reliability
+State is persisted to PostgreSQL before an event is published through Redis. That ordering is what makes the polled snapshot a legitimate reference whenever SSE drops.
 
-- Idempotency prevents duplicate transactions, runs, and exports.
-- Another tenant's resource appears as `404`.
-- SSE resumes through `Last-Event-ID`.
-- Polling reads the authoritative snapshot when SSE fails.
-- Safe failure codes remain separate from internal traces.
-- Signed URLs are short-lived while objects stay private.
-- Retention jobs delete artifacts without hiding deletion failures.
+<Mermaid
+  title="Diagram 2. The analysis state machine, from queued to one of four terminal states."
+  chart={`stateDiagram-v2
+  [*] --> queued
+  queued --> collecting_evidence
+  collecting_evidence --> building_context
+  building_context --> simulating
+  building_context --> calculating_finance: simulation stage skipped
+  simulating --> calculating_finance
+  calculating_finance --> scoring
+  scoring --> composing_report
+  composing_report --> validating_report
+  validating_report --> completed
+  validating_report --> partial
+  validating_report --> failed
+  queued --> cancelled
+  simulating --> cancelled
+  completed --> [*]
+  partial --> [*]
+  failed --> [*]
+  cancelled --> [*]`}
+/>
+
+The stage order is linear. The `building_context -> calculating_finance` branch applies when a deployment has no agent adapter at all, so the `simulating` stage leaves the plan and is reported as skipped rather than credited as completed work. The first three terminal states are decided at `validating_report`; `cancelled` completes the state machine for a run stopped before it finishes, and the diagram shows two example exit points.
+
+Each run stores the input snapshot, evidence snapshot, correlation ID, idempotency information, model manifest, prompt manifest, cohort, seed, budget, and agent artifacts.
+
+## Receipt photo flow
+
+```text
+created -> uploading -> queued -> preprocessing -> extracting
+  -> ready_for_review -> confirmed -> committed
+  | failed | cancelled
+```
+
+The upload goes straight from the browser to object storage through a signed URL, so large files never pass through the API. OCR runs on a separate worker queue so a large image cannot hold up ordinary transaction requests.
+
+## Storage responsibilities
+
+- **PostgreSQL** is the system of record. Money is stored as integer rupiah, time in UTC, and identifiers are UUIDs with no business meaning.
+- **Redis** holds queues and short-lived event transport. Lost jobs are reconciled from PostgreSQL state, not from Redis.
+- **Object storage** holds receipt photos and export PDFs as private objects.
+- **OASIS traces** are written per run into a unique directory, registered as an artifact, and removed by an explicit retention job. No global trace file is overwritten between runs.
+
+## Resilience patterns
+
+- Idempotency keys prevent duplicate analyses, transactions, and exports.
+- A recovery lease keeps a live task from being reclaimed too early while still allowing a run whose worker died to return to the queue.
+- Separate timeouts per data provider and per LLM call.
+- Retries only for transient errors. Schema or policy errors are not repeated unchanged.
+- Hard per-run budgets for persona count, rounds, concurrency, tokens, and wall clock.
+- A deterministic fallback when OASIS fails, producing a `partial` result.
+- SSE can resume with `Last-Event-ID`; snapshot polling is the backup.
+- A correlation ID flows from the API through Celery, the OASIS trace, the report, and the logs.
+
+## Repository boundaries
+
+Frontend, backend, and documentation are three separate repositories with no cross-directory imports. The contract between them is the HTTP API and the OpenAPI schema, not a shared module. Code structure details are in [Code structure and standards](/en/docs/engineering/struktur-dan-standar).
