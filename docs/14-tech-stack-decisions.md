@@ -58,7 +58,7 @@ Karena jadwal GEMASTIK berpotensi melewati Oktober 2026, memin ke 2.5 berarti me
 
 **Keputusan:** pakai `gemini-3.1-flash-lite` sebagai model default — stabil, runway panjang, biaya mirip flash-lite generasi sebelumnya. Model preview (`-preview` pada namanya) **dilarang** untuk jalur demo karena dapat berubah tanpa pemberitahuan.
 
-Provider live dipilih per deployment melalui `OASIS_PROVIDER=gemini|openai`, sedangkan model dipilih melalui `OASIS_MODEL_ID`. Kredensial tetap terpisah pada `GEMINI_API_KEY` dan `OPENAI_API_KEY`; sistem tidak melakukan fallback provider otomatis. Gemini tetap menjadi default sampai benchmark live menunjukkan alasan untuk mengubahnya. Keputusan lengkap ada di [ADR-005](adr/ADR-005-oasis-multi-provider.md).
+Provider live dipilih per deployment melalui `OASIS_PROVIDER=gemini|openai`, sedangkan model dipilih melalui `OASIS_MODEL_ID`. Kredensial tetap terpisah pada `GEMINI_API_KEY` dan `OPENAI_API_KEY`; sistem tidak melakukan fallback provider otomatis. Gemini tetap menjadi default sampai benchmark live menunjukkan alasan untuk mengubahnya. Keputusan lengkap ada di [ADR-005](adr/ADR-005-multi-provider-oasis.md).
 
 Model aktif MVP:
 
